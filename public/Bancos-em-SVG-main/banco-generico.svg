@@ -1,0 +1,9 @@
+<svg width="2500" height="2500" viewBox="0 0 2500 2500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="2500" height="2500" rx="500" fill="#E0E0E0"/>
+  <path d="M1250 500L500 1000V2000H2000V1000L1250 500Z" fill="#9E9E9E"/>
+  <rect x="700" y="1200" width="1100" height="200" rx="20" fill="#757575"/>
+  <rect x="700" y="1500" width="1100" height="200" rx="20" fill="#757575"/>
+  <rect x="700" y="1800" width="1100" height="200" rx="20" fill="#757575"/>
+  <circle cx="1250" cy="850" r="150" fill="#757575"/>
+</svg>
+

@@ -11,18 +11,19 @@ import {
   MenuItem,
   Button,
   Box,
-  Paper,
+  Card,
   Typography,
 } from '@mui/material';
 import { CloudUpload as CloudUploadIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
-import { CompraVenda, ComprovanteData } from 'src/types/declaracao';
+import { Banco, ComprovanteData } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
+import { getBancoImagem } from 'src/constants/bancos';
 
 interface ModalComprovanteProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (compraVendaId: string, arquivo: File) => void;
-  comprasVendas: CompraVenda[];
+  onSubmit: (bancoId: string, arquivo: File) => void;
+  bancos: Banco[];
   comprovanteData: ComprovanteData;
   onComprovanteDataChange: (data: ComprovanteData) => void;
 }
@@ -31,7 +32,7 @@ export function ModalComprovante({
   open,
   onClose,
   onSubmit,
-  comprasVendas,
+  bancos,
   comprovanteData,
   onComprovanteDataChange,
 }: ModalComprovanteProps) {
@@ -43,12 +44,12 @@ export function ModalComprovante({
   };
 
   const handleSubmit = () => {
-    if (!comprovanteData.compraVendaId || !comprovanteData.arquivo) {
-      alert('Por favor, selecione uma compra/venda e anexe o comprovante');
+    if (!comprovanteData.bancoId || !comprovanteData.arquivo) {
+      alert('Por favor, selecione um banco e anexe o comprovante');
       return;
     }
 
-    onSubmit(comprovanteData.compraVendaId, comprovanteData.arquivo);
+    onSubmit(comprovanteData.bancoId, comprovanteData.arquivo);
     onClose();
   };
 
@@ -67,10 +68,10 @@ export function ModalComprovante({
     >
       <DialogTitle sx={{ pb: 2 }}>
         <Typography variant="h6" fontWeight={700}>
-          Anexar Comprovante
+          Anexar Informe de Renda
         </Typography>
         <Typography variant="body2" color={COLORS.grey600} sx={{ mt: 0.5 }}>
-          Selecione a compra/venda e anexe o comprovante
+          Selecione um banco e anexe o informe de rendimentos
         </Typography>
       </DialogTitle>
       <Divider />
@@ -78,26 +79,57 @@ export function ModalComprovante({
         <Stack spacing={2.5}>
           <FormControl fullWidth required>
             <Typography variant="body2" fontWeight={600} mb={1}>
-              Selecione a compra/venda
+              Selecione o banco
             </Typography>
             <Select
-              value={comprovanteData.compraVendaId}
-              onChange={(e) => onComprovanteDataChange({ ...comprovanteData, compraVendaId: e.target.value })}
+              value={comprovanteData.bancoId}
+              onChange={(e) => onComprovanteDataChange({ ...comprovanteData, bancoId: e.target.value })}
               displayEmpty
             >
               <MenuItem value="" disabled>
-                Selecione uma opção
+                Selecione um banco
               </MenuItem>
-              {comprasVendas.length === 0 ? (
+              {bancos.length === 0 ? (
                 <MenuItem value="" disabled>
-                  Nenhuma compra/venda cadastrada
+                  Nenhum banco cadastrado. Cadastre um banco primeiro.
                 </MenuItem>
               ) : (
-                comprasVendas.map((cv) => (
-                  <MenuItem key={cv.id} value={cv.id}>
-                    {cv.operacao} - {cv.categoria} - {cv.tipo} - R$ {cv.valor} ({cv.data})
-                  </MenuItem>
-                ))
+                bancos.map((banco) => {
+                  const imagemBanco = getBancoImagem(banco.codigoCompe || null);
+                  return (
+                    <MenuItem key={banco.id} value={banco.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, width: '100%' }}>
+                        <Box
+                          component="img"
+                          src={imagemBanco || ''}
+                          alt={banco.nome}
+                          sx={{
+                            width: 20,
+                            height: 20,
+                            objectFit: 'contain',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Box sx={{ flex: 1 }}>
+                          <Typography 
+                            variant="body2" 
+                            sx={{ 
+                              fontSize: '0.875rem',
+                              fontWeight: 600,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.01em',
+                            }}
+                          >
+                            {banco.nome.toUpperCase()}
+                          </Typography>
+                          <Typography variant="caption" color={COLORS.grey600}>
+                            Conta: {banco.conta} • Agência: {banco.agencia}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </MenuItem>
+                  );
+                })
               )}
             </Select>
           </FormControl>
@@ -113,7 +145,7 @@ export function ModalComprovante({
               style={{ display: 'none' }}
               onChange={handleComprovanteFileChange}
             />
-            <Paper
+            <Card
               variant="outlined"
               sx={{
                 borderStyle: 'dashed',
@@ -159,7 +191,7 @@ export function ModalComprovante({
                   </Typography>
                 </Stack>
               )}
-            </Paper>
+            </Card>
           </Box>
         </Stack>
       </DialogContent>
@@ -171,7 +203,7 @@ export function ModalComprovante({
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={!comprovanteData.compraVendaId || !comprovanteData.arquivo}
+          disabled={!comprovanteData.bancoId || !comprovanteData.arquivo}
           sx={{ bgcolor: COLORS.primary, '&:hover': { bgcolor: COLORS.primaryDark } }}
         >
           Anexar

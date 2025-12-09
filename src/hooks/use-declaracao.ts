@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { CompraVenda, FormDataCompraVenda, ComprovanteData } from 'src/types/declaracao';
+import {
+  FormDataCompraVenda,
+  ComprovanteData,
+  FormDataEmprestimo,
+  FormDataParticipacao,
+  FormDataAtividadeRural,
+  CompraVenda,
+} from 'src/types/declaracao';
 
 const initialFormData: FormDataCompraVenda = {
   tipo: '',
@@ -7,26 +14,42 @@ const initialFormData: FormDataCompraVenda = {
   valor: '',
   descricao: '',
   comprovante: null,
+  bancoId: '',
 };
 
 const initialComprovanteData: ComprovanteData = {
-  compraVendaId: '',
+  bancoId: '',
   arquivo: null,
 };
 
+const initialEmprestimoData: FormDataEmprestimo = {
+  data: '',
+  bancoId: '',
+  valor: '',
+};
+
+const initialParticipacaoData: FormDataParticipacao = {
+  cnpj: '',
+  razaoSocial: '',
+  percentual: '',
+};
+
+const initialAtividadeRuralData: FormDataAtividadeRural = {
+  emprestimoRuralBancoId: '',
+  emprestimoRuralValor: '',
+  bensAtividadeRural: '',
+  fichaSanitaria: null,
+};
+
 export function useDeclaracao() {
-  const [comprasVendas, setComprasVendas] = useState<CompraVenda[]>([]);
   const [formData, setFormData] = useState<FormDataCompraVenda>(initialFormData);
   const [comprovanteData, setComprovanteData] = useState<ComprovanteData>(initialComprovanteData);
+  const [emprestimoData, setEmprestimoData] = useState<FormDataEmprestimo>(initialEmprestimoData);
+  const [participacaoData, setParticipacaoData] = useState<FormDataParticipacao>(initialParticipacaoData);
+  const [atividadeRuralData, setAtividadeRuralData] = useState<FormDataAtividadeRural>(initialAtividadeRuralData);
 
-  const addCompraVenda = (compraVenda: CompraVenda) => {
-    setComprasVendas((prev) => [...prev, compraVenda]);
-  };
-
-  const updateComprovante = (id: string, arquivo: File) => {
-    setComprasVendas((prev) =>
-      prev.map((cv) => (cv.id === id ? { ...cv, comprovante: arquivo } : cv))
-    );
+  const addCompraVenda = (_compraVenda: CompraVenda) => {
+    // Função mantida para compatibilidade, mas não armazena os dados atualmente
   };
 
   const resetFormData = () => {
@@ -37,16 +60,35 @@ export function useDeclaracao() {
     setComprovanteData(initialComprovanteData);
   };
 
+  const resetEmprestimoData = () => {
+    setEmprestimoData(initialEmprestimoData);
+  };
+
+  const resetParticipacaoData = () => {
+    setParticipacaoData(initialParticipacaoData);
+  };
+
+  const resetAtividadeRuralData = () => {
+    setAtividadeRuralData(initialAtividadeRuralData);
+  };
+
   return {
-    comprasVendas,
     formData,
     comprovanteData,
+    emprestimoData,
+    participacaoData,
+    atividadeRuralData,
     setFormData,
     setComprovanteData,
+    setEmprestimoData,
+    setParticipacaoData,
+    setAtividadeRuralData,
     addCompraVenda,
-    updateComprovante,
     resetFormData,
     resetComprovanteData,
+    resetEmprestimoData,
+    resetParticipacaoData,
+    resetAtividadeRuralData,
   };
 }
 

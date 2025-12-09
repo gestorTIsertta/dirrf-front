@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Box, Container } from '@mui/material';
 import { useDeclaracao } from 'src/hooks/use-declaracao';
 import { useModals } from 'src/hooks/use-modals';
@@ -6,37 +7,92 @@ import { ResumoCards } from 'src/components/declaracao/resumo-cards';
 import { CategoriasGrid } from 'src/components/declaracao/categorias-grid';
 import { DocumentosList } from 'src/components/declaracao/documentos-list';
 import { ItensTable } from 'src/components/declaracao/itens-table';
+import { BancosTable } from 'src/components/declaracao/bancos-table';
 import { ChecklistSection } from 'src/components/declaracao/checklist-section';
 import { TimelineSection } from 'src/components/declaracao/timeline-section';
 import { ModalCompraVenda } from 'src/components/declaracao/modal-compra-venda';
 import { ModalComprovante } from 'src/components/declaracao/modal-comprovante';
+import { ModalEmprestimo } from 'src/components/declaracao/modal-emprestimo';
+import { ModalParticipacao } from 'src/components/declaracao/modal-participacao';
+import { ModalAtividadeRural } from 'src/components/declaracao/modal-atividade-rural';
 import { COLORS } from 'src/constants/declaracao';
+import { Banco } from 'src/types/declaracao';
 
 export default function DeclaracaoView() {
+  const [bancos, setBancos] = useState<Banco[]>([
+    {
+      id: '1',
+      nome: 'Banco do Brasil',
+      conta: '12345-6',
+      agencia: '1234-5',
+      tipo: 'Corrente',
+      dataAbertura: '15/03/2020',
+    },
+    {
+      id: '2',
+      nome: 'Itaú',
+      conta: '78901-2',
+      agencia: '5678-9',
+      tipo: 'Poupança',
+      dataAbertura: '22/05/2019',
+    },
+  ]);
+
   const {
-    comprasVendas,
     formData,
     comprovanteData,
+    emprestimoData,
+    participacaoData,
+    atividadeRuralData,
     setFormData,
     setComprovanteData,
+    setEmprestimoData,
+    setParticipacaoData,
+    setAtividadeRuralData,
     addCompraVenda,
-    updateComprovante,
     resetFormData,
     resetComprovanteData,
+    resetEmprestimoData,
+    resetParticipacaoData,
+    resetAtividadeRuralData,
   } = useDeclaracao();
 
   const {
     modalCompraVendaOpen,
     modalComprovanteOpen,
+    modalEmprestimoOpen,
+    modalParticipacaoOpen,
+    modalAtividadeRuralOpen,
     operacaoAtual,
     categoriaAtual,
     openCompraVenda,
     closeCompraVenda,
     openComprovante,
     closeComprovante,
+    openEmprestimo,
+    closeEmprestimo,
+    openParticipacao,
+    closeParticipacao,
+    openAtividadeRural,
+    closeAtividadeRural,
   } = useModals();
 
   const handleOpenCompraVenda = (operacao: 'Compra' | 'Venda', categoria: string) => {
+    if (categoria === 'Empréstimos') {
+      resetEmprestimoData();
+      openEmprestimo();
+      return;
+    }
+    if (categoria === 'Participações em Empresas') {
+      resetParticipacaoData();
+      openParticipacao();
+      return;
+    }
+    if (categoria === 'Atividade Rural') {
+      resetAtividadeRuralData();
+      openAtividadeRural();
+      return;
+    }
     resetFormData();
     openCompraVenda(operacao, categoria);
   };
@@ -61,9 +117,29 @@ export default function DeclaracaoView() {
     resetComprovanteData();
   };
 
-  const handleSubmitComprovante = (compraVendaId: string, arquivo: File) => {
-    updateComprovante(compraVendaId, arquivo);
+  const handleSubmitComprovante = (bancoId: string, arquivo: File) => {
+    setBancos((prev) =>
+      prev.map((b) => (b.id === bancoId ? { ...b, informeRendimentos: arquivo } : b))
+    );
     handleCloseComprovante();
+  };
+
+  const handleSubmitEmprestimo = (data: typeof emprestimoData) => {
+    console.log('Empréstimo cadastrado:', data);
+    closeEmprestimo();
+    resetEmprestimoData();
+  };
+
+  const handleSubmitParticipacao = (data: typeof participacaoData) => {
+    console.log('Participação cadastrada:', data);
+    closeParticipacao();
+    resetParticipacaoData();
+  };
+
+  const handleSubmitAtividadeRural = (data: typeof atividadeRuralData) => {
+    console.log('Atividade Rural cadastrada:', data);
+    closeAtividadeRural();
+    resetAtividadeRuralData();
   };
 
   return (
@@ -78,9 +154,11 @@ export default function DeclaracaoView() {
           onVendaClick={(categoria) => handleOpenCompraVenda('Venda', categoria)}
         />
 
+        <BancosTable bancos={bancos} onBancosChange={setBancos} />
+
         <DocumentosList onAnexarClick={handleOpenComprovante} />
 
-        <ItensTable />
+        <ItensTable bancos={bancos} />
 
         <ChecklistSection />
 
@@ -94,15 +172,42 @@ export default function DeclaracaoView() {
           categoria={categoriaAtual}
           formData={formData}
           onFormDataChange={setFormData}
+          bancos={bancos}
         />
 
         <ModalComprovante
           open={modalComprovanteOpen} 
           onClose={handleCloseComprovante}
           onSubmit={handleSubmitComprovante}
-          comprasVendas={comprasVendas}
+          bancos={bancos}
           comprovanteData={comprovanteData}
           onComprovanteDataChange={setComprovanteData}
+        />
+
+        <ModalEmprestimo
+          open={modalEmprestimoOpen}
+          onClose={closeEmprestimo}
+          onSubmit={handleSubmitEmprestimo}
+          formData={emprestimoData}
+          onFormDataChange={setEmprestimoData}
+          bancos={bancos}
+        />
+
+        <ModalParticipacao
+          open={modalParticipacaoOpen}
+          onClose={closeParticipacao}
+          onSubmit={handleSubmitParticipacao}
+          formData={participacaoData}
+          onFormDataChange={setParticipacaoData}
+        />
+
+        <ModalAtividadeRural
+          open={modalAtividadeRuralOpen}
+          onClose={closeAtividadeRural}
+          onSubmit={handleSubmitAtividadeRural}
+          formData={atividadeRuralData}
+          onFormDataChange={setAtividadeRuralData}
+          bancos={bancos}
         />
       </Container>
     </Box>

@@ -21,6 +21,7 @@
     "@mui/icons-material": "^5.14.12",
     "@mui/material": "^5.14.12",
     "@mui/system": "^5.14.12",
+    "bancos-brasileiros": "^6.2.115",
     "firebase": "^10.4.0",
     "framer-motion": "^10.16.4",
     "lodash": "^4.17.21",
@@ -55,4 +56,3 @@
     "vite-plugin-checker": "^0.6.2"
   }
 }
-

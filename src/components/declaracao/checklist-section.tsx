@@ -1,10 +1,10 @@
-import { Box, Paper, Stack, Typography, Button, Grid, Checkbox } from '@mui/material';
+import { Box, Card, Stack, Typography, Button, Grid, Checkbox } from '@mui/material';
 import { Send as SendIcon, Chat as ChatIcon, HelpOutline as HelpOutlineIcon } from '@mui/icons-material';
 import { checklistItems, COLORS } from 'src/constants/declaracao';
 
 export function ChecklistSection() {
   return (
-    <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+    <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
       <Typography variant="h6" fontWeight={700} mb={2} sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
         Antes de enviar, confirme:
       </Typography>
@@ -23,7 +23,7 @@ export function ChecklistSection() {
           </Stack>
         ))}
       </Stack>
-      <Paper sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: '#EFF6FF', mb: 2 }}>
+      <Card sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: '#EFF6FF', mb: 2 }}>
         <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
           Importante
         </Typography>
@@ -31,7 +31,7 @@ export function ChecklistSection() {
           Após o envio, sua declaração será analisada pela nossa equipe de contadores. Alterações posteriores deverão
           ser solicitadas diretamente ao escritório através do chat ou telefone.
         </Typography>
-      </Paper>
+      </Card>
       <Button
         fullWidth
         variant="contained"
@@ -54,7 +54,7 @@ export function ChecklistSection() {
 
       <Grid container spacing={{ xs: 1.5, sm: 2 }} mb={3}>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: '#F3E8FF', height: '100%', display: 'flex' }}>
+          <Card sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: '#F3E8FF', height: '100%', display: 'flex' }}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-start" sx={{ width: '100%' }}>
               <ChatIcon sx={{ color: '#7C3AED', fontSize: { xs: 32, sm: 40 }, mt: { xs: 0, sm: 0.5 }, flexShrink: 0 }} />
               <Stack spacing={1} sx={{ flex: 1, height: '100%', width: '100%' }}>
@@ -85,10 +85,10 @@ export function ChecklistSection() {
                 </Button>
               </Stack>
             </Stack>
-          </Paper>
+          </Card>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: COLORS.successLight, height: '100%', display: 'flex' }}>
+          <Card sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: COLORS.successLight, height: '100%', display: 'flex' }}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-start" sx={{ width: '100%' }}>
               <HelpOutlineIcon
                 sx={{ color: COLORS.success, fontSize: { xs: 32, sm: 40 }, mt: { xs: 0, sm: 0.5 }, flexShrink: 0 }}
@@ -121,10 +121,10 @@ export function ChecklistSection() {
                 </Button>
               </Stack>
             </Stack>
-          </Paper>
+          </Card>
         </Grid>
       </Grid>
-    </Paper>
+    </Card>
   );
 }
 

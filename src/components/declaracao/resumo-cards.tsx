@@ -1,17 +1,17 @@
-import { Grid, Paper, Stack, Typography, Chip, Box } from '@mui/material';
+import { Grid, Card, Stack, Typography, Chip, Box } from '@mui/material';
 import { CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 import Iconify from 'src/components/iconify/iconify';
 import { COLORS } from 'src/constants/declaracao';
 
 export function ResumoCards() {
   return (
-    <>
+    <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
       <Typography variant="h6" fontWeight={700} mb={2} sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
         Resumo da Declaração
       </Typography>
-      <Grid container spacing={{ xs: 1.5, sm: 2 }} mb={3}>
+      <Grid container spacing={{ xs: 1.5, sm: 2 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Card sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Stack direction="row" spacing={1.5} alignItems="flex-start" mb={2}>
               <Box
                 sx={{
@@ -65,11 +65,11 @@ export function ResumoCards() {
                 </Typography>
               </Box>
             </Stack>
-          </Paper>
+          </Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Card sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Stack direction="row" spacing={1.5} alignItems="flex-start" mb={2}>
               <Box
                 sx={{
@@ -120,11 +120,11 @@ export function ResumoCards() {
                 </Typography>
               </Box>
             </Stack>
-          </Paper>
+          </Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Card sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Stack direction="row" spacing={1.5} alignItems="flex-start" mb={2}>
               <Box
                 sx={{
@@ -175,11 +175,11 @@ export function ResumoCards() {
                 </Typography>
               </Box>
             </Stack>
-          </Paper>
+          </Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 2.5, bgcolor: COLORS.successLight, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Card sx={{ p: 2.5, bgcolor: COLORS.successLight, height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Stack direction="row" spacing={1.5} alignItems="center" mb={2}>
               <Box
                 sx={{
@@ -210,10 +210,10 @@ export function ResumoCards() {
                 Previsão: 3º lote (Julho/2024)
               </Typography>
             </Stack>
-          </Paper>
+          </Card>
         </Grid>
       </Grid>
-    </>
+    </Card>
   );
 }
 

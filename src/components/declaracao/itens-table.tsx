@@ -1,11 +1,55 @@
-import { Box, Paper, Stack, Typography, Button, TextField, Table, TableHead, TableRow, TableCell, TableBody, Chip, IconButton, Tooltip, InputAdornment } from '@mui/material';
-import { Search as SearchIcon, Download as DownloadIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
-import Iconify from 'src/components/iconify/iconify';
-import { itensMock, COLORS } from 'src/constants/declaracao';
+import { useState } from 'react';
+import { Box, Card, Stack, Typography, Button, TextField, Table, TableHead, TableRow, TableCell, TableBody, InputAdornment } from '@mui/material';
+import { Search as SearchIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
+import { COLORS } from 'src/constants/declaracao';
+import { ModalDeleteConfirm } from './modal-delete-confirm';
+import { ModalEditItem } from './modal-edit-item';
+import { StatusChip } from './status-chip';
+import { OperacaoChip } from './operacao-chip';
+import { ActionButtons } from './action-buttons';
+import { useItens } from 'src/hooks/use-itens';
+import { useDeleteModal } from 'src/hooks/use-delete-modal';
+import { ItemDeclarado, Banco } from 'src/types/declaracao';
 
-export function ItensTable() {
+interface ItensTableProps {
+  bancos: Banco[];
+}
+
+export function ItensTable({ bancos }: ItensTableProps) {
+  const { itens, formData, setFormData, updateItem, deleteItem, prepareEditForm, resetForm } = useItens();
+  const { isOpen, itemToDelete, openModal, closeModal, confirmDelete } = useDeleteModal<ItemDeclarado>();
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState<ItemDeclarado | null>(null);
+
+  const handleOpenEditModal = (item: ItemDeclarado) => {
+    setItemToEdit(item);
+    prepareEditForm(item);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setItemToEdit(null);
+    resetForm();
+  };
+
+  const handleSubmitEdit = (itemAtualizado: ItemDeclarado) => {
+    updateItem(itemAtualizado);
+    handleCloseEditModal();
+  };
+
+  const handleOpenDeleteModal = (item: ItemDeclarado) => {
+    openModal(item);
+  };
+
+  const handleConfirmDelete = () => {
+    confirmDelete((item) => {
+      deleteItem(item.id);
+    });
+  };
+
   return (
-    <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+    <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         justifyContent="space-between"
@@ -16,46 +60,21 @@ export function ItensTable() {
         <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
           Resumo dos Itens Declarados
         </Typography>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1.5}
+        <TextField
+          size="small"
+          placeholder="Buscar itens..."
           sx={{
-            width: { xs: '100%', sm: 'auto' },
-            alignItems: { xs: 'stretch', sm: 'center' },
+            width: { xs: '100%', sm: 220, md: 260 },
+            minWidth: { xs: '100%', sm: 220, md: 260 },
           }}
-        >
-          <TextField
-            size="small"
-            placeholder="Buscar itens..."
-            sx={{
-              width: { xs: '100%', sm: 220, md: 260 },
-              minWidth: { xs: '100%', sm: 220, md: 260 },
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: COLORS.grey600, fontSize: { xs: 18, sm: 20 } }} />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Button
-            startIcon={<DownloadIcon />}
-            variant="outlined"
-            sx={{
-              width: { xs: '100%', sm: 'auto' },
-              minWidth: { xs: 'auto', sm: 120 },
-              borderColor: COLORS.grey200,
-              color: COLORS.grey800,
-              '&:hover': {
-                borderColor: COLORS.primary,
-                bgcolor: 'transparent',
-              },
-            }}
-          >
-            Exportar
-          </Button>
-        </Stack>
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: COLORS.grey600, fontSize: { xs: 18, sm: 20 } }} />
+              </InputAdornment>
+            ),
+          }}
+        />
       </Stack>
       <Box
         sx={{
@@ -89,7 +108,7 @@ export function ItensTable() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {itensMock.map((item) => (
+            {itens.map((item) => (
               <TableRow key={item.id} hover>
                 <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, py: { xs: 1, sm: 1.5 } }}>
                   {item.categoria}
@@ -98,25 +117,7 @@ export function ItensTable() {
                   {item.tipo}
                 </TableCell>
                 <TableCell sx={{ py: { xs: 1, sm: 1.5 } }}>
-                  <Chip
-                    label={item.operacao}
-                    size="small"
-                    sx={{
-                      bgcolor:
-                        item.operacao === 'Compra'
-                          ? COLORS.successLight
-                          : item.operacao === 'Venda'
-                          ? COLORS.errorLight
-                          : COLORS.primary + '20',
-                      color:
-                        item.operacao === 'Compra'
-                          ? COLORS.success
-                          : item.operacao === 'Venda'
-                          ? COLORS.error
-                          : COLORS.primary,
-                      fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                    }}
-                  />
+                  <OperacaoChip operacao={item.operacao} />
                 </TableCell>
                 <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, py: { xs: 1, sm: 1.5 } }}>
                   {item.data}
@@ -134,37 +135,10 @@ export function ItensTable() {
                   )}
                 </TableCell>
                 <TableCell sx={{ py: { xs: 1, sm: 1.5 } }}>
-                  <Chip
-                    label={item.status}
-                    size="small"
-                    sx={{
-                      bgcolor:
-                        item.status === 'Completo'
-                          ? COLORS.successLight
-                          : item.status === 'Faltando info'
-                          ? COLORS.errorLight
-                          : COLORS.warningLight,
-                      color:
-                        item.status === 'Completo'
-                          ? COLORS.success
-                          : item.status === 'Faltando info'
-                          ? COLORS.error
-                          : COLORS.warning,
-                      fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                    }}
-                  />
+                  <StatusChip status={item.status} />
                 </TableCell>
                 <TableCell align="right" sx={{ py: { xs: 1, sm: 1.5 } }}>
-                  <Tooltip title="Editar">
-                    <IconButton size="small">
-                      <Iconify icon="solar:pen-bold" width={18} />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Deletar">
-                    <IconButton size="small" color="error">
-                      <Iconify icon="solar:trash-bin-trash-bold" width={18} />
-                    </IconButton>
-                  </Tooltip>
+                  <ActionButtons onEdit={() => handleOpenEditModal(item)} onDelete={() => handleOpenDeleteModal(item)} />
                 </TableCell>
               </TableRow>
             ))}
@@ -197,7 +171,26 @@ export function ItensTable() {
           </Button>
         </Stack>
       </Stack>
-    </Paper>
+
+      <ModalEditItem
+        open={editModalOpen}
+        onClose={handleCloseEditModal}
+        onSubmit={handleSubmitEdit}
+        item={itemToEdit}
+        formData={formData}
+        onFormDataChange={setFormData}
+        bancos={bancos}
+      />
+
+      <ModalDeleteConfirm
+        open={isOpen}
+        onClose={closeModal}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Exclusão de Item"
+        message="Tem certeza que deseja excluir este item da declaração?"
+        itemName={itemToDelete ? `${itemToDelete.categoria} - ${itemToDelete.tipo}` : undefined}
+      />
+    </Card>
   );
 }
 

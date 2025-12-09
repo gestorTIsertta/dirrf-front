@@ -1,4 +1,4 @@
-import { Grid, Paper, Stack, Typography, Button, Card, CardContent, CardActions, Box } from '@mui/material';
+import { Grid, Card, Stack, Typography, Button, CardContent, CardActions, Box } from '@mui/material';
 import { categorias, COLORS } from 'src/constants/declaracao';
 
 interface CategoriasGridProps {
@@ -8,7 +8,7 @@ interface CategoriasGridProps {
 
 export function CategoriasGrid({ onCompraClick, onVendaClick }: CategoriasGridProps) {
   return (
-    <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+    <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
       <Typography variant="h6" fontWeight={700} mb={0.5} sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
         O que você comprou e vendeu no último ano?
       </Typography>
@@ -38,13 +38,22 @@ export function CategoriasGrid({ onCompraClick, onVendaClick }: CategoriasGridPr
                 </Typography>
               </CardContent>
               <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
-                <Button variant="outlined" size="small" onClick={() => onCompraClick(cat.titulo)}>
+                <Button 
+                  variant="outlined" 
+                  size="medium" 
+                  onClick={() => onCompraClick(cat.titulo)}
+                  sx={{ minWidth: 100 }}
+                >
                   Comprei
                 </Button>
                 <Button
                   variant="contained"
-                  size="small"
-                  sx={{ bgcolor: COLORS.primary, '&:hover': { bgcolor: COLORS.primaryDark } }}
+                  size="medium"
+                  sx={{ 
+                    bgcolor: COLORS.primary, 
+                    '&:hover': { bgcolor: COLORS.primaryDark },
+                    minWidth: 100,
+                  }}
                   onClick={() => onVendaClick(cat.titulo)}
                 >
                   Vendi
@@ -54,7 +63,7 @@ export function CategoriasGrid({ onCompraClick, onVendaClick }: CategoriasGridPr
           </Grid>
         ))}
       </Grid>
-    </Paper>
+    </Card>
   );
 }
 

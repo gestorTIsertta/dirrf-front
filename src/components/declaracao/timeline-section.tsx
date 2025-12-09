@@ -1,10 +1,10 @@
-import { Stack, Typography, Box, Paper } from '@mui/material';
+import { Stack, Typography, Box, Card } from '@mui/material';
 import { CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 import { timelineSteps, COLORS } from 'src/constants/declaracao';
 
 export function TimelineSection() {
   return (
-    <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+    <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
       <Typography variant="h6" fontWeight={700} mb={1} sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
         Linha do tempo do processo
       </Typography>
@@ -64,7 +64,7 @@ export function TimelineSection() {
           </Stack>
         ))}
       </Stack>
-    </Paper>
+    </Card>
   );
 }
 

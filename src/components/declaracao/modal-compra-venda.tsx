@@ -9,12 +9,16 @@ import {
   TextField,
   Button,
   Box,
-  Paper,
+  Card,
   Typography,
+  FormControl,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { CloudUpload as CloudUploadIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
-import { FormDataCompraVenda, CompraVenda } from 'src/types/declaracao';
+import { FormDataCompraVenda, CompraVenda, Banco } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
+import { getBancoImagem } from 'src/constants/bancos';
 
 interface ModalCompraVendaProps {
   open: boolean;
@@ -24,6 +28,7 @@ interface ModalCompraVendaProps {
   categoria: string | null;
   formData: FormDataCompraVenda;
   onFormDataChange: (data: FormDataCompraVenda) => void;
+  bancos: Banco[];
 }
 
 export function ModalCompraVenda({
@@ -34,6 +39,7 @@ export function ModalCompraVenda({
   categoria,
   formData,
   onFormDataChange,
+  bancos,
 }: ModalCompraVendaProps) {
   const comprovanteFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -43,7 +49,7 @@ export function ModalCompraVenda({
   };
 
   const handleSubmit = () => {
-    if (!formData.tipo || !formData.data || !formData.valor) {
+    if (!formData.tipo || !formData.data || !formData.valor || !formData.bancoId) {
       alert('Por favor, preencha todos os campos obrigatórios');
       return;
     }
@@ -56,6 +62,7 @@ export function ModalCompraVenda({
       data: formData.data,
       valor: formData.valor,
       comprovante: formData.comprovante,
+      bancoId: formData.bancoId,
     };
 
     onSubmit(novaCompraVenda);
@@ -121,6 +128,63 @@ export function ModalCompraVenda({
             rows={3}
           />
 
+          <FormControl fullWidth required>
+            <Typography variant="body2" fontWeight={600} mb={1}>
+              Banco
+            </Typography>
+            <Select
+              value={formData.bancoId}
+              onChange={(e) => onFormDataChange({ ...formData, bancoId: e.target.value })}
+              displayEmpty
+            >
+              <MenuItem value="" disabled>
+                Selecione um banco
+              </MenuItem>
+              {bancos.length === 0 ? (
+                <MenuItem value="" disabled>
+                  Nenhum banco cadastrado. Cadastre um banco primeiro.
+                </MenuItem>
+              ) : (
+                bancos.map((banco) => {
+                  const imagemBanco = getBancoImagem(banco.codigoCompe || null);
+                  return (
+                    <MenuItem key={banco.id} value={banco.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, width: '100%' }}>
+                        <Box
+                          component="img"
+                          src={imagemBanco || ''}
+                          alt={banco.nome}
+                          sx={{
+                            width: 20,
+                            height: 20,
+                            objectFit: 'contain',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Box sx={{ flex: 1 }}>
+                          <Typography 
+                            variant="body2" 
+                            sx={{ 
+                              fontSize: '0.875rem',
+                              fontWeight: 600,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.01em',
+                            }}
+                          >
+                            {banco.nome.toUpperCase()}
+                          </Typography>
+                          <Typography variant="caption" color={COLORS.grey600}>
+                            Conta: {banco.conta} • Agência: {banco.agencia}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </MenuItem>
+                  );
+                })
+              )}
+            </Select>
+          </FormControl>
+
           <Box>
             <Typography variant="body2" fontWeight={600} mb={1}>
               Anexar Comprovante (opcional)
@@ -132,7 +196,7 @@ export function ModalCompraVenda({
               style={{ display: 'none' }}
               onChange={handleComprovanteChange}
             />
-            <Paper
+            <Card
               variant="outlined"
               sx={{
                 borderStyle: 'dashed',
@@ -178,7 +242,7 @@ export function ModalCompraVenda({
                   </Typography>
                 </Stack>
               )}
-            </Paper>
+            </Card>
           </Box>
         </Stack>
       </DialogContent>

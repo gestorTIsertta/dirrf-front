@@ -6,6 +6,7 @@ export interface CompraVenda {
   data: string;
   valor: string;
   comprovante?: File | null;
+  bancoId: string;
 }
 
 export interface Documento {
@@ -26,6 +27,7 @@ export interface ItemDeclarado {
   valor: string;
   comprovante: boolean;
   status: string;
+  bancoId?: string;
 }
 
 export interface Categoria {
@@ -43,10 +45,72 @@ export interface FormDataCompraVenda {
   valor: string;
   descricao: string;
   comprovante: File | null;
+  bancoId: string;
 }
 
 export interface ComprovanteData {
-  compraVendaId: string;
+  bancoId: string;
   arquivo: File | null;
+}
+
+export interface Emprestimo {
+  id: string;
+  data: string;
+  bancoId: string;
+  valor: string;
+}
+
+export interface ParticipacaoEmpresa {
+  id: string;
+  cnpj: string;
+  razaoSocial: string;
+  percentual: string;
+}
+
+export interface AtividadeRural {
+  id: string;
+  emprestimoRuralBancoId?: string;
+  emprestimoRuralValor?: string;
+  bensAtividadeRural?: string;
+  fichaSanitaria?: File | null;
+}
+
+export interface Banco {
+  id: string;
+  nome: string;
+  codigoCompe?: string; // Código COMPE do banco (para buscar logo)
+  conta: string;
+  agencia: string;
+  tipo: 'Corrente' | 'Poupança';
+  dataAbertura: string;
+  informeRendimentos?: File | null;
+}
+
+export interface FormDataEmprestimo {
+  data: string;
+  bancoId: string;
+  valor: string;
+}
+
+export interface FormDataParticipacao {
+  cnpj: string;
+  razaoSocial: string;
+  percentual: string;
+}
+
+export interface FormDataAtividadeRural {
+  emprestimoRuralBancoId: string;
+  emprestimoRuralValor: string;
+  bensAtividadeRural: string;
+  fichaSanitaria: File | null;
+}
+
+export interface FormDataBanco {
+  nome: string;
+  conta: string;
+  agencia: string;
+  tipo: 'Corrente' | 'Poupança';
+  dataAbertura: string;
+  informeRendimentos: File | null;
 }
 

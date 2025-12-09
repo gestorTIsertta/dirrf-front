@@ -5,6 +5,9 @@ import {
   CurrencyBitcoin as BitcoinIcon,
   Diamond as DiamondIcon,
   Business as BusinessIcon,
+  AccountBalance as AccountBalanceIcon,
+  CorporateFare as CorporateFareIcon,
+  Agriculture as AgricultureIcon,
 } from '@mui/icons-material';
 
 export const COLORS = {
@@ -70,6 +73,30 @@ export const categorias = [
     imagemUrl: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=220&fit=crop',
     icon: <BusinessIcon />,
     color: '#607D8B',
+  },
+  {
+    id: 'emprestimos',
+    titulo: 'Empréstimos',
+    descricao: 'Empréstimos e financiamentos obtidos ou concedidos.',
+    imagemUrl: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=400&h=220&fit=crop',
+    icon: <AccountBalanceIcon />,
+    color: '#E91E63',
+  },
+  {
+    id: 'participacoes',
+    titulo: 'Participações em Empresas',
+    descricao: 'Participações societárias e investimentos em empresas.',
+    imagemUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=220&fit=crop',
+    icon: <CorporateFareIcon />,
+    color: '#3F51B5',
+  },
+  {
+    id: 'atividade-rural',
+    titulo: 'Atividade Rural',
+    descricao: 'Atividades rurais, empréstimos rurais e bens da atividade.',
+    imagemUrl: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=400&h=220&fit=crop',
+    icon: <AgricultureIcon />,
+    color: '#4CAF50',
   },
 ];
 
