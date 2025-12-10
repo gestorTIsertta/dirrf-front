@@ -20,6 +20,7 @@ import { ItemDeclarado, FormDataCompraVenda, Banco } from 'src/types/declaracao'
 import { COLORS } from 'src/constants/declaracao';
 import { formatDateFromInput } from 'src/utils/date-format';
 import { getBancoImagem } from 'src/constants/bancos';
+import { DatePickerField } from './date-picker-field';
 
 interface ModalEditItemProps {
   open: boolean;
@@ -39,7 +40,7 @@ export function ModalEditItem({
   formData,
   onFormDataChange,
   bancos,
-}: ModalEditItemProps) {
+}: Readonly<ModalEditItemProps>) {
   const comprovanteFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleComprovanteChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,13 +115,10 @@ export function ModalEditItem({
             onChange={(e) => onFormDataChange({ ...formData, tipo: e.target.value })}
             required
           />
-          <TextField
-            fullWidth
+          <DatePickerField
             label="Data"
-            type="date"
             value={formData.data}
             onChange={(e) => onFormDataChange({ ...formData, data: e.target.value })}
-            InputLabelProps={{ shrink: true }}
             required
           />
           <TextField

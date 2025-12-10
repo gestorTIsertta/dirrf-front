@@ -26,7 +26,6 @@ textarea {
   font-family: "Public Sans", sans-serif;
 }
 
-/* Melhorias de responsividade */
 @media (max-width: 600px) {
   .MuiContainer-root {
     padding-left: 12px !important;
@@ -34,7 +33,6 @@ textarea {
   }
 }
 
-/* Scrollbar personalizada para tabelas */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -52,5 +50,86 @@ textarea {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+.MuiPickersPopper-root {
+  z-index: 9999 !important;
+}
+
+.MuiPickersCalendarHeader-root {
+  background-color: #F9FAFB;
+  padding: 16px;
+  border-bottom: 1.5px solid #F4F6F8;
+}
+
+.MuiPickersCalendarHeader-label {
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  color: #212B36 !important;
+}
+
+.MuiPickersArrowSwitcher-root button {
+  color: #900B0D !important;
+}
+
+.MuiPickersArrowSwitcher-root button:hover {
+  background-color: #900B0D15 !important;
+}
+
+.MuiDayCalendar-weekContainer {
+  margin: 4px 0;
+}
+
+.MuiPickersDay-root {
+  font-weight: 500 !important;
+  color: #212B36 !important;
+  border-radius: 8px !important;
+  margin: 2px !important;
+  transition: 'all 0.2s ease-in-out' !important;
+}
+
+.MuiPickersDay-root:hover {
+  background-color: #900B0D15 !important;
+  color: #900B0D !important;
+}
+
+.MuiPickersDay-root.Mui-selected {
+  background-color: #900B0D !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.MuiPickersDay-root.Mui-selected:hover {
+  background-color: #720A10 !important;
+}
+
+.MuiPickersDay-root.Mui-disabled {
+  color: #C4CDD5 !important;
+}
+
+.MuiPickersDay-today {
+  border: 2px solid #900B0D !important;
+  font-weight: 700 !important;
+}
+
+.MuiPickersDay-today:not(.Mui-selected) {
+  background-color: transparent !important;
+  color: #900B0D !important;
+}
+
+.MuiDayCalendar-weekDayLabel {
+  font-weight: 700 !important;
+  color: #637381 !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.MuiPickersCalendarHeader-switchViewButton {
+  color: #900B0D !important;
+}
+
+.MuiPickersCalendarHeader-switchViewButton:hover {
+  background-color: #900B0D15 !important;
 }
 

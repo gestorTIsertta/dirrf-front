@@ -1,6 +1,3 @@
-/**
- * Converte data de DD/MM/YYYY para YYYY-MM-DD (formato input date)
- */
 export function formatDateToInput(date: string): string {
   const parts = date.split('/');
   if (parts.length === 3) {
@@ -9,9 +6,6 @@ export function formatDateToInput(date: string): string {
   return date;
 }
 
-/**
- * Converte data de YYYY-MM-DD para DD/MM/YYYY
- */
 export function formatDateFromInput(date: string): string {
   const parts = date.split('-');
   if (parts.length === 3) {

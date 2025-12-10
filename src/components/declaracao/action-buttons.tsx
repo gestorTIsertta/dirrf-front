@@ -1,5 +1,6 @@
 import { IconButton, Tooltip, Stack } from '@mui/material';
 import Iconify from 'src/components/iconify/iconify';
+import { COLORS } from 'src/constants/declaracao';
 
 interface ActionButtonsProps {
   onEdit?: () => void;
@@ -8,7 +9,7 @@ interface ActionButtonsProps {
   size?: 'small' | 'medium';
 }
 
-export function ActionButtons({ onEdit, onDelete, onView, size = 'small' }: ActionButtonsProps) {
+export function ActionButtons({ onEdit, onDelete, onView, size = 'small' }: Readonly<ActionButtonsProps>) {
   return (
     <Stack direction="row" spacing={1} alignItems="center">
       {onView && (
@@ -27,7 +28,17 @@ export function ActionButtons({ onEdit, onDelete, onView, size = 'small' }: Acti
       )}
       {onDelete && (
         <Tooltip title="Deletar">
-          <IconButton size={size} color="error" onClick={onDelete}>
+          <IconButton 
+            size={size} 
+            onClick={onDelete}
+            sx={{
+              color: COLORS.primary,
+              '&:hover': {
+                bgcolor: `${COLORS.primary}15`,
+                color: COLORS.primary,
+              },
+            }}
+          >
             <Iconify icon="solar:trash-bin-trash-bold" width={18} />
           </IconButton>
         </Tooltip>

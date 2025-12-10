@@ -15,7 +15,7 @@ interface ItensTableProps {
   bancos: Banco[];
 }
 
-export function ItensTable({ bancos }: ItensTableProps) {
+export function ItensTable({ bancos }: Readonly<ItensTableProps>) {
   const { itens, formData, setFormData, updateItem, deleteItem, prepareEditForm, resetForm } = useItens();
   const { isOpen, itemToDelete, openModal, closeModal, confirmDelete } = useDeleteModal<ItemDeclarado>();
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -129,7 +129,7 @@ export function ItensTable({ bancos }: ItensTableProps) {
                   {item.comprovante ? (
                     <CheckCircleIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: COLORS.success }} />
                   ) : (
-                    <Typography color={COLORS.error} variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                    <Typography color={COLORS.primary} variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                       ✕
                     </Typography>
                   )}

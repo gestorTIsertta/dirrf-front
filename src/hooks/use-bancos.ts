@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Banco, FormDataBanco } from 'src/types/declaracao';
 import { getCodigoCompeByNome } from 'src/constants/bancos';
 
@@ -47,6 +47,8 @@ export function useBancos({ initialBancos, onBancosChange }: UseBancosOptions = 
     }
   }, [initialBancos]);
 
+  const bancosNomesKey = useMemo(() => bancos.map((b) => b.nome).join(','), [bancos]);
+
   useEffect(() => {
     const bancosComCodigo = bancos.map((banco) => {
       if (!banco.codigoCompe && banco.nome) {
@@ -66,8 +68,7 @@ export function useBancos({ initialBancos, onBancosChange }: UseBancosOptions = 
       setBancos(bancosComCodigo);
       onBancosChange?.(bancosComCodigo);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bancos.map((b) => b.nome).join(',')]);
+  }, [bancos, bancosNomesKey, onBancosChange]);
 
   const updateBancos = (newBancos: Banco[]) => {
     setBancos(newBancos);

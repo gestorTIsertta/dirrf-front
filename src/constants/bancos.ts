@@ -140,17 +140,11 @@ export const getBancoOptions = () => {
   }));
 };
 
-/**
- * Retorna os bancos ordenados: primeiro os que têm imagem específica (alfabético), depois os com imagem genérica (alfabético)
- * @returns Array de bancos ordenados
- */
 export const getBancoOptionsOrdenados = () => {
   const bancos = getBancoOptions();
-  
-  // Separar bancos com imagem específica e com imagem genérica
   const bancosComImagemEspecifica: Array<{ label: string; value: string; codigo: string }> = [];
   const bancosComImagemGenerica: Array<{ label: string; value: string; codigo: string }> = [];
-  
+
   bancos.forEach((banco) => {
     const codigo = banco.codigo.padStart(3, '0');
     const temImagemEspecifica = BANCOS_IMAGENS_MAP[codigo] !== undefined;
@@ -160,20 +154,17 @@ export const getBancoOptionsOrdenados = () => {
       bancosComImagemGenerica.push(banco);
     }
   });
-  
-  // Ordenar alfabeticamente cada grupo
+
   const ordenarAlfabetico = (a: { label: string }, b: { label: string }) => {
     return a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' });
   };
-  
+
   bancosComImagemEspecifica.sort(ordenarAlfabetico);
   bancosComImagemGenerica.sort(ordenarAlfabetico);
-  
-  // Retornar: primeiro os com imagem específica, depois os com imagem genérica
+
   return [...bancosComImagemEspecifica, ...bancosComImagemGenerica];
 };
 
-// Mapeamento de códigos COMPE para caminhos das imagens SVG
 const BANCOS_IMAGENS_MAP: Record<string, string> = {
   '001': '/Bancos-em-SVG-main/Banco do Brasil S.A/banco-do-brasil-sem-fundo.svg',
   '237': '/Bancos-em-SVG-main/Bradesco S.A/bradesco.svg',
@@ -193,7 +184,6 @@ const BANCOS_IMAGENS_MAP: Record<string, string> = {
   '422': '/Bancos-em-SVG-main/Banco Safra S.A/logo-safra.svg',
   '655': '/Bancos-em-SVG-main/Banco Votorantim/banco-bv-logo.svg',
   '756': '/Bancos-em-SVG-main/Sicoob/sicoob-vector-logo.svg',
-  // Bancos adicionais com imagens disponíveis
   '102': '/Bancos-em-SVG-main/XP Investimentos/xp-investimentos-logo.svg',
   '197': '/Bancos-em-SVG-main/Stone Pagamentos S.A/stone.svg',
   '079': '/Bancos-em-SVG-main/PicPay/Logo-PicPay.svg',
@@ -233,14 +223,8 @@ const BANCOS_IMAGENS_MAP: Record<string, string> = {
   '265': '/Bancos-em-SVG-main/Efí - Gerencianet/logo-efi-bank-laranja.svg',
 };
 
-// Caminho da imagem genérica para bancos sem logo específico
 const IMAGEM_GENERICA_BANCO = '/Bancos-em-SVG-main/banco-generico.svg';
 
-/**
- * Retorna o caminho da imagem SVG do banco baseado no código COMPE
- * @param codigoCompe - Código COMPE do banco (ex: '001', '237')
- * @returns Caminho da imagem SVG (específica ou genérica se não encontrado)
- */
 export const getBancoImagem = (codigoCompe: string | null | undefined): string | null => {
   if (!codigoCompe) return IMAGEM_GENERICA_BANCO;
   const codigo = codigoCompe.padStart(3, '0');

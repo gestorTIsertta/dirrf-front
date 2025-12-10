@@ -19,6 +19,7 @@ import { CloudUpload as CloudUploadIcon, CheckCircle as CheckCircleIcon } from '
 import { Banco, FormDataBanco } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
 import { getBancoOptionsOrdenados, getBancoImagem } from 'src/constants/bancos';
+import { DatePickerField } from './date-picker-field';
 
 interface ModalBancoProps {
   open: boolean;
@@ -38,7 +39,7 @@ export function ModalBanco({
   onFormDataChange,
   editingId,
   fileInputRef,
-}: ModalBancoProps) {
+}: Readonly<ModalBancoProps>) {
   const todosBancos = getBancoOptionsOrdenados();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,13 +184,10 @@ export function ModalBanco({
               <MenuItem value="Poupança">Poupança</MenuItem>
             </Select>
           </FormControl>
-          <TextField
-            fullWidth
+          <DatePickerField
             label="Data de Abertura"
-            type="date"
             value={formData.dataAbertura}
             onChange={(e) => onFormDataChange({ ...formData, dataAbertura: e.target.value })}
-            InputLabelProps={{ shrink: true }}
             required
           />
 

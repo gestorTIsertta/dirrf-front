@@ -19,6 +19,7 @@ import { CloudUpload as CloudUploadIcon, CheckCircle as CheckCircleIcon } from '
 import { FormDataCompraVenda, CompraVenda, Banco } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
 import { getBancoImagem } from 'src/constants/bancos';
+import { DatePickerField } from './date-picker-field';
 
 interface ModalCompraVendaProps {
   open: boolean;
@@ -40,7 +41,7 @@ export function ModalCompraVenda({
   formData,
   onFormDataChange,
   bancos,
-}: ModalCompraVendaProps) {
+}: Readonly<ModalCompraVendaProps>) {
   const comprovanteFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleComprovanteChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,13 +102,10 @@ export function ModalCompraVenda({
             onChange={(e) => onFormDataChange({ ...formData, tipo: e.target.value })}
             required
           />
-          <TextField
-            fullWidth
+          <DatePickerField
             label="Data"
-            type="date"
             value={formData.data}
             onChange={(e) => onFormDataChange({ ...formData, data: e.target.value })}
-            InputLabelProps={{ shrink: true }}
             required
           />
           <TextField

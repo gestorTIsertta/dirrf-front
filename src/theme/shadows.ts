@@ -1,6 +1,5 @@
 import { alpha, Theme } from '@mui/material/styles';
 
-// ----------------------------------------------------------------------
 
 export function shadows(mode: 'light' | 'dark') {
   const color = mode === 'light' ? '#919EAB' : '#000000';

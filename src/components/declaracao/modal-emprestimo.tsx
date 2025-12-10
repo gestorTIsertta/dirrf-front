@@ -16,6 +16,7 @@ import {
 import { FormDataEmprestimo, Banco } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
 import { getBancoImagem } from 'src/constants/bancos';
+import { DatePickerField } from './date-picker-field';
 
 interface ModalEmprestimoProps {
   open: boolean;
@@ -33,7 +34,7 @@ export function ModalEmprestimo({
   formData,
   onFormDataChange,
   bancos,
-}: ModalEmprestimoProps) {
+}: Readonly<ModalEmprestimoProps>) {
   const handleSubmit = () => {
     if (!formData.data || !formData.bancoId || !formData.valor) {
       alert('Por favor, preencha todos os campos obrigatórios');
@@ -66,13 +67,10 @@ export function ModalEmprestimo({
       <Divider />
       <DialogContent sx={{ pt: 3 }}>
         <Stack spacing={2.5}>
-          <TextField
-            fullWidth
+          <DatePickerField
             label="Data do Empréstimo"
-            type="date"
             value={formData.data}
             onChange={(e) => onFormDataChange({ ...formData, data: e.target.value })}
-            InputLabelProps={{ shrink: true }}
             required
           />
           <FormControl fullWidth required>

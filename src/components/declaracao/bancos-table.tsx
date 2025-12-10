@@ -15,7 +15,7 @@ interface BancosTableProps {
   onBancosChange?: (bancos: Banco[]) => void;
 }
 
-export function BancosTable({ bancos: bancosProp, onBancosChange }: BancosTableProps) {
+export function BancosTable({ bancos: bancosProp, onBancosChange }: Readonly<BancosTableProps>) {
   const {
     bancos,
     formData,
@@ -190,7 +190,7 @@ export function BancosTable({ bancos: bancosProp, onBancosChange }: BancosTableP
                       {banco.informeRendimentos ? (
                         <CheckCircleIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: COLORS.success }} />
                       ) : (
-                        <Typography color={COLORS.error} variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                        <Typography color={COLORS.primary} variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                           Não anexado
                         </Typography>
                       )}

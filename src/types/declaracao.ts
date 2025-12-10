@@ -78,7 +78,7 @@ export interface AtividadeRural {
 export interface Banco {
   id: string;
   nome: string;
-  codigoCompe?: string; // Código COMPE do banco (para buscar logo)
+  codigoCompe?: string;
   conta: string;
   agencia: string;
   tipo: 'Corrente' | 'Poupança';

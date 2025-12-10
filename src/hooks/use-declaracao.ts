@@ -49,7 +49,7 @@ export function useDeclaracao() {
   const [atividadeRuralData, setAtividadeRuralData] = useState<FormDataAtividadeRural>(initialAtividadeRuralData);
 
   const addCompraVenda = (_compraVenda: CompraVenda) => {
-    // Função mantida para compatibilidade, mas não armazena os dados atualmente
+    // Função mantida para compatibilidade
   };
 
   const resetFormData = () => {

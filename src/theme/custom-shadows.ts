@@ -1,7 +1,6 @@
 import { alpha } from '@mui/material/styles';
 import { grey, primary, secondary, info, success, warning, error } from './palette';
 
-// ----------------------------------------------------------------------
 
 export function customShadows(mode: 'light' | 'dark') {
   const color = mode === 'light' ? grey[500] : grey[900];

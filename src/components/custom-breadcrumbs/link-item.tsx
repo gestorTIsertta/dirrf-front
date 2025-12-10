@@ -5,7 +5,6 @@ import { RouterLink } from 'src/routes/components';
 
 import { BreadcrumbsLinkProps } from './types';
 
-// ----------------------------------------------------------------------
 
 type Props = {
   link: BreadcrumbsLinkProps;
@@ -13,7 +12,7 @@ type Props = {
   disabled: boolean;
 };
 
-export default function BreadcrumbsLink({ link, activeLast, disabled }: Props) {
+export default function BreadcrumbsLink({ link, activeLast, disabled }: Readonly<Props>) {
   const styles = {
     typography: 'body2',
     alignItems: 'center',

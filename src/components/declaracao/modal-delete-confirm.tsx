@@ -17,7 +17,7 @@ export function ModalDeleteConfirm({
   title = 'Confirmar Exclusão',
   message = 'Tem certeza que deseja excluir este item?',
   itemName,
-}: ModalDeleteConfirmProps) {
+}: Readonly<ModalDeleteConfirmProps>) {
   const handleConfirm = () => {
     onConfirm();
     onClose();
@@ -51,7 +51,7 @@ export function ModalDeleteConfirm({
             {itemName}
           </Typography>
         )}
-        <Typography variant="body2" color={COLORS.error} sx={{ mt: 2 }}>
+        <Typography variant="body2" color={COLORS.primary} sx={{ mt: 2 }}>
           Esta ação não pode ser desfeita.
         </Typography>
       </DialogContent>
@@ -64,8 +64,8 @@ export function ModalDeleteConfirm({
           onClick={handleConfirm}
           variant="contained"
           sx={{
-            bgcolor: COLORS.error,
-            '&:hover': { bgcolor: '#D32F2F' },
+            bgcolor: COLORS.primary,
+            '&:hover': { bgcolor: COLORS.primaryDark },
           }}
         >
           Excluir
