@@ -18,6 +18,11 @@ import { ModalAtividadeRural } from 'src/components/declaracao/modal-atividade-r
 import { COLORS } from 'src/constants/declaracao';
 import { Banco } from 'src/types/declaracao';
 
+const criarArquivoExemplo = (nome: string, tipo: string = 'application/pdf'): File => {
+  const blob = new Blob(['Conteúdo do arquivo de exemplo'], { type: tipo });
+  return new File([blob], nome, { type: tipo, lastModified: Date.now() });
+};
+
 export default function DeclaracaoView() {
   const [bancos, setBancos] = useState<Banco[]>([
     {
@@ -27,6 +32,7 @@ export default function DeclaracaoView() {
       agencia: '1234-5',
       tipo: 'Corrente',
       dataAbertura: '15/03/2020',
+      informeRendimentos: criarArquivoExemplo('Informe_Rendimentos_BB_2024.pdf'),
     },
     {
       id: '2',
@@ -124,20 +130,17 @@ export default function DeclaracaoView() {
     handleCloseComprovante();
   };
 
-  const handleSubmitEmprestimo = (data: typeof emprestimoData) => {
-    console.log('Empréstimo cadastrado:', data);
+  const handleSubmitEmprestimo = (_data: typeof emprestimoData) => {
     closeEmprestimo();
     resetEmprestimoData();
   };
 
-  const handleSubmitParticipacao = (data: typeof participacaoData) => {
-    console.log('Participação cadastrada:', data);
+  const handleSubmitParticipacao = (_data: typeof participacaoData) => {
     closeParticipacao();
     resetParticipacaoData();
   };
 
-  const handleSubmitAtividadeRural = (data: typeof atividadeRuralData) => {
-    console.log('Atividade Rural cadastrada:', data);
+  const handleSubmitAtividadeRural = (_data: typeof atividadeRuralData) => {
     closeAtividadeRural();
     resetAtividadeRuralData();
   };
@@ -149,14 +152,14 @@ export default function DeclaracaoView() {
 
         <ResumoCards />
 
+        <BancosTable bancos={bancos} onBancosChange={setBancos} />
+
+        <DocumentosList onAnexarClick={handleOpenComprovante} />
+
         <CategoriasGrid
           onCompraClick={(categoria) => handleOpenCompraVenda('Compra', categoria)}
           onVendaClick={(categoria) => handleOpenCompraVenda('Venda', categoria)}
         />
-
-        <BancosTable bancos={bancos} onBancosChange={setBancos} />
-
-        <DocumentosList onAnexarClick={handleOpenComprovante} />
 
         <ItensTable bancos={bancos} />
 
@@ -165,7 +168,7 @@ export default function DeclaracaoView() {
         <TimelineSection />
 
         <ModalCompraVenda
-          open={modalCompraVendaOpen} 
+          open={modalCompraVendaOpen}
           onClose={handleCloseCompraVenda}
           onSubmit={handleSubmitCompraVenda}
           operacao={operacaoAtual}
@@ -176,7 +179,7 @@ export default function DeclaracaoView() {
         />
 
         <ModalComprovante
-          open={modalComprovanteOpen} 
+          open={modalComprovanteOpen}
           onClose={handleCloseComprovante}
           onSubmit={handleSubmitComprovante}
           bancos={bancos}

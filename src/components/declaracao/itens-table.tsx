@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Box, Card, Stack, Typography, Button, TextField, Table, TableHead, TableRow, TableCell, TableBody, InputAdornment } from '@mui/material';
-import { Search as SearchIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
+import { Box, Card, Stack, Typography, Button, TextField, Table, TableHead, TableRow, TableCell, TableBody, InputAdornment, IconButton, Tooltip } from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
+import Iconify from 'src/components/iconify/iconify';
 import { COLORS } from 'src/constants/declaracao';
 import { ModalDeleteConfirm } from './modal-delete-confirm';
 import { ModalEditItem } from './modal-edit-item';
+import { ModalDocumentos } from './modal-documentos';
 import { StatusChip } from './status-chip';
 import { OperacaoChip } from './operacao-chip';
 import { ActionButtons } from './action-buttons';
@@ -20,6 +22,8 @@ export function ItensTable({ bancos }: Readonly<ItensTableProps>) {
   const { isOpen, itemToDelete, openModal, closeModal, confirmDelete } = useDeleteModal<ItemDeclarado>();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<ItemDeclarado | null>(null);
+  const [modalDocumentosOpen, setModalDocumentosOpen] = useState(false);
+  const [itemSelecionado, setItemSelecionado] = useState<ItemDeclarado | null>(null);
 
   const handleOpenEditModal = (item: ItemDeclarado) => {
     setItemToEdit(item);
@@ -46,6 +50,29 @@ export function ItensTable({ bancos }: Readonly<ItensTableProps>) {
     confirmDelete((item) => {
       deleteItem(item.id);
     });
+  };
+
+  const handleOpenDocumentos = (item: ItemDeclarado) => {
+    setItemSelecionado(item);
+    setModalDocumentosOpen(true);
+  };
+
+  const handleCloseDocumentos = () => {
+    setModalDocumentosOpen(false);
+    setItemSelecionado(null);
+  };
+
+  const getDocumentosItem = () => {
+    if (!itemSelecionado || !itemSelecionado.comprovante || !itemSelecionado.comprovanteFile) {
+      return [];
+    }
+    return [
+      {
+        id: itemSelecionado.id.toString(),
+        nome: itemSelecionado.comprovanteFile.name || `Comprovante - ${itemSelecionado.tipo}`,
+        arquivo: itemSelecionado.comprovanteFile,
+      },
+    ];
   };
 
   return (
@@ -126,11 +153,22 @@ export function ItensTable({ bancos }: Readonly<ItensTableProps>) {
                   {item.valor}
                 </TableCell>
                 <TableCell sx={{ py: { xs: 1, sm: 1.5 } }}>
-                  {item.comprovante ? (
-                    <CheckCircleIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: COLORS.success }} />
+                  {item.comprovante && item.comprovanteFile ? (
+                    <Tooltip title="Visualizar documento">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDocumentos(item);
+                        }}
+                        sx={{ p: 0.5 }}
+                      >
+                        <Iconify icon="solar:eye-bold" width={18} />
+                      </IconButton>
+                    </Tooltip>
                   ) : (
                     <Typography color={COLORS.primary} variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
-                      ✕
+                      Não anexado
                     </Typography>
                   )}
                 </TableCell>
@@ -189,6 +227,13 @@ export function ItensTable({ bancos }: Readonly<ItensTableProps>) {
         title="Confirmar Exclusão de Item"
         message="Tem certeza que deseja excluir este item da declaração?"
         itemName={itemToDelete ? `${itemToDelete.categoria} - ${itemToDelete.tipo}` : undefined}
+      />
+
+      <ModalDocumentos
+        open={modalDocumentosOpen}
+        onClose={handleCloseDocumentos}
+        documentos={getDocumentosItem()}
+        titulo={`Comprovantes - ${itemSelecionado?.categoria || ''} - ${itemSelecionado?.tipo || ''}`}
       />
     </Card>
   );

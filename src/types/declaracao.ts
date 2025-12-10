@@ -26,6 +26,7 @@ export interface ItemDeclarado {
   data: string;
   valor: string;
   comprovante: boolean;
+  comprovanteFile?: File | null; // Arquivo do comprovante quando anexado
   status: string;
   bancoId?: string;
 }
@@ -45,6 +46,7 @@ export interface FormDataCompraVenda {
   valor: string;
   descricao: string;
   comprovante: File | null;
+  comprovantesAnexados: File[]; // Lista de arquivos já anexados
   bancoId: string;
 }
 
@@ -103,6 +105,7 @@ export interface FormDataAtividadeRural {
   emprestimoRuralValor: string;
   bensAtividadeRural: string;
   fichaSanitaria: File | null;
+  fichasAnexadas: File[]; // Lista de arquivos já anexados
 }
 
 export interface FormDataBanco {
@@ -112,5 +115,6 @@ export interface FormDataBanco {
   tipo: 'Corrente' | 'Poupança';
   dataAbertura: string;
   informeRendimentos: File | null;
+  informesAnexados: File[]; // Lista de arquivos já anexados
 }
 

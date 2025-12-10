@@ -135,6 +135,11 @@ export const documentosMock = [
   },
 ];
 
+const criarArquivoExemplo = (nome: string, tipo: string = 'application/pdf'): File => {
+  const blob = new Blob(['Conteúdo do arquivo de exemplo'], { type: tipo });
+  return new File([blob], nome, { type: tipo, lastModified: Date.now() });
+};
+
 export const itensMock = [
   {
     id: 1,
@@ -144,6 +149,7 @@ export const itensMock = [
     data: '15/03/2024',
     valor: '450.000,00',
     comprovante: true,
+    comprovanteFile: criarArquivoExemplo('Comprovante_Compra_Apartamento.pdf'),
     status: 'Completo',
   },
   {
@@ -154,6 +160,7 @@ export const itensMock = [
     data: '22/05/2024',
     valor: '68.500,00',
     comprovante: true,
+    comprovanteFile: criarArquivoExemplo('Comprovante_Venda_Automovel.pdf'),
     status: 'Em análise',
   },
   {
@@ -164,6 +171,7 @@ export const itensMock = [
     data: '10/08/2024',
     valor: '125.800,00',
     comprovante: true,
+    comprovanteFile: criarArquivoExemplo('Comprovante_Acoes_2024.pdf'),
     status: 'Completo',
   },
   {
@@ -174,6 +182,7 @@ export const itensMock = [
     data: '05/11/2024',
     valor: '45.200,00',
     comprovante: true,
+    comprovanteFile: criarArquivoExemplo('Comprovante_Bitcoin.pdf'),
     status: 'Completo',
   },
   {
@@ -194,6 +203,7 @@ export const itensMock = [
     data: '30/06/2024',
     valor: '32.400,00',
     comprovante: true,
+    comprovanteFile: criarArquivoExemplo('Comprovante_FII.pdf'),
     status: 'Completo',
   },
 ];

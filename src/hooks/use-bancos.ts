@@ -9,6 +9,7 @@ const initialFormData: FormDataBanco = {
   tipo: 'Corrente',
   dataAbertura: '',
   informeRendimentos: null,
+  informesAnexados: [],
 };
 
 const bancosMock: Banco[] = [
@@ -95,6 +96,7 @@ export function useBancos({ initialBancos, onBancosChange }: UseBancosOptions = 
       tipo: banco.tipo,
       dataAbertura: banco.dataAbertura,
       informeRendimentos: banco.informeRendimentos || null,
+      informesAnexados: banco.informeRendimentos ? [banco.informeRendimentos] : [],
     });
     setEditingId(banco.id);
   };

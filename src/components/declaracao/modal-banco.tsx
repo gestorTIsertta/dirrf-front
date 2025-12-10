@@ -14,8 +14,9 @@ import {
   Select,
   MenuItem,
   Autocomplete,
+  IconButton,
 } from '@mui/material';
-import { CloudUpload as CloudUploadIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
+import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, Description as DescriptionIcon } from '@mui/icons-material';
 import { Banco, FormDataBanco } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
 import { getBancoOptionsOrdenados, getBancoImagem } from 'src/constants/bancos';
@@ -44,7 +45,21 @@ export function ModalBanco({
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
-    onFormDataChange({ ...formData, informeRendimentos: file });
+    if (file) {
+      onFormDataChange({ 
+        ...formData, 
+        informesAnexados: [...formData.informesAnexados, file],
+        informeRendimentos: null 
+      });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    const novosArquivos = formData.informesAnexados.filter((_, i) => i !== index);
+    onFormDataChange({ ...formData, informesAnexados: novosArquivos });
   };
 
   const handleSubmit = () => {
@@ -63,7 +78,7 @@ export function ModalBanco({
       agencia: formData.agencia,
       tipo: formData.tipo,
       dataAbertura: formData.dataAbertura,
-      informeRendimentos: formData.informeRendimentos || undefined,
+      informeRendimentos: formData.informesAnexados.length > 0 ? formData.informesAnexados[0] : undefined,
     };
 
     onSubmit(banco);
@@ -195,6 +210,42 @@ export function ModalBanco({
             <Typography variant="body2" fontWeight={600} mb={1}>
               Informe de Rendimentos (opcional)
             </Typography>
+            
+            {formData.informesAnexados.length > 0 && (
+              <Stack spacing={1} mb={2}>
+                {formData.informesAnexados.map((arquivo, index) => (
+                  <FileCard
+                    key={index}
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      bgcolor: COLORS.grey100,
+                    }}
+                  >
+                    <DescriptionIcon sx={{ color: COLORS.primary, fontSize: 24 }} />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+                        {arquivo.name}
+                      </Typography>
+                      <Typography variant="caption" color={COLORS.grey600}>
+                        {(arquivo.size / 1024 / 1024).toFixed(2)} MB
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleRemoveFile(index)}
+                      sx={{ color: COLORS.primary }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </FileCard>
+                ))}
+              </Stack>
+            )}
+
             <input
               ref={fileInputRef}
               type="file"
@@ -220,34 +271,15 @@ export function ModalBanco({
               }}
               onClick={() => fileInputRef.current?.click()}
             >
-              {formData.informeRendimentos ? (
-                <Stack spacing={1} alignItems="center">
-                  <CheckCircleIcon sx={{ color: COLORS.success, fontSize: 32 }} />
-                  <Typography variant="body2" fontWeight={600}>
-                    {formData.informeRendimentos.name}
-                  </Typography>
-                  <Button
-                    size="small"
-                    variant="text"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onFormDataChange({ ...formData, informeRendimentos: null });
-                    }}
-                  >
-                    Remover
-                  </Button>
-                </Stack>
-              ) : (
-                <Stack spacing={1} alignItems="center">
-                  <CloudUploadIcon sx={{ fontSize: 32, color: COLORS.primary }} />
-                  <Typography variant="body2" fontWeight={600}>
-                    Clique para selecionar arquivo
-                  </Typography>
-                  <Typography variant="caption" color={COLORS.grey600}>
-                    PDF – até 10 MB
-                  </Typography>
-                </Stack>
-              )}
+              <Stack spacing={1} alignItems="center">
+                <CloudUploadIcon sx={{ fontSize: 32, color: COLORS.primary }} />
+                <Typography variant="body2" fontWeight={600}>
+                  Clique para selecionar arquivo
+                </Typography>
+                <Typography variant="caption" color={COLORS.grey600}>
+                  PDF – até 10 MB
+                </Typography>
+              </Stack>
             </FileCard>
           </Box>
         </Stack>

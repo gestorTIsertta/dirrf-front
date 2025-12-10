@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Box, Card, Stack, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
-import { Add as AddIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
+import { Box, Card, Stack, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody, IconButton, Tooltip } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
+import Iconify from 'src/components/iconify/iconify';
 import { Banco } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
 import { getBancoByCompe, getCodigoCompeByNome, getBancoImagem } from 'src/constants/bancos';
 import { ModalDeleteConfirm } from './modal-delete-confirm';
 import { ModalBanco } from './modal-banco';
+import { ModalDocumentos } from './modal-documentos';
 import { ActionButtons } from './action-buttons';
 import { useBancos } from 'src/hooks/use-bancos';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
@@ -32,6 +34,8 @@ export function BancosTable({ bancos: bancosProp, onBancosChange }: Readonly<Ban
 
   const { isOpen, itemToDelete, openModal, closeModal, confirmDelete } = useDeleteModal<Banco>();
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalDocumentosOpen, setModalDocumentosOpen] = useState(false);
+  const [bancoSelecionado, setBancoSelecionado] = useState<Banco | null>(null);
 
   const handleOpenModal = (banco?: Banco) => {
     if (banco) {
@@ -69,6 +73,29 @@ export function BancosTable({ bancos: bancosProp, onBancosChange }: Readonly<Ban
       const updatedBancos = bancos.filter((b) => b.id !== banco.id);
       updateBancos(updatedBancos);
     });
+  };
+
+  const handleOpenDocumentos = (banco: Banco) => {
+    setBancoSelecionado(banco);
+    setModalDocumentosOpen(true);
+  };
+
+  const handleCloseDocumentos = () => {
+    setModalDocumentosOpen(false);
+    setBancoSelecionado(null);
+  };
+
+  const getDocumentosBanco = () => {
+    if (!bancoSelecionado || !bancoSelecionado.informeRendimentos) {
+      return [];
+    }
+    return [
+      {
+        id: bancoSelecionado.id,
+        nome: bancoSelecionado.informeRendimentos.name || 'Informe de Rendimentos',
+        arquivo: bancoSelecionado.informeRendimentos,
+      },
+    ];
   };
 
   return (
@@ -188,7 +215,18 @@ export function BancosTable({ bancos: bancosProp, onBancosChange }: Readonly<Ban
                     </TableCell>
                     <TableCell sx={{ py: { xs: 1, sm: 1.5 } }}>
                       {banco.informeRendimentos ? (
-                        <CheckCircleIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: COLORS.success }} />
+                        <Tooltip title="Visualizar documento">
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDocumentos(banco);
+                            }}
+                            sx={{ p: 0.5 }}
+                          >
+                            <Iconify icon="solar:eye-bold" width={18} />
+                          </IconButton>
+                        </Tooltip>
                       ) : (
                         <Typography color={COLORS.primary} variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                           Não anexado
@@ -223,6 +261,13 @@ export function BancosTable({ bancos: bancosProp, onBancosChange }: Readonly<Ban
         title="Confirmar Exclusão de Banco"
         message="Tem certeza que deseja excluir este banco?"
         itemName={itemToDelete?.nome}
+      />
+
+      <ModalDocumentos
+        open={modalDocumentosOpen}
+        onClose={handleCloseDocumentos}
+        documentos={getDocumentosBanco()}
+        titulo={`Informe de Rendimentos - ${bancoSelecionado?.nome || ''}`}
       />
     </>
   );

@@ -14,6 +14,7 @@ const initialFormData: FormDataCompraVenda = {
   valor: '',
   descricao: '',
   comprovante: null,
+  comprovantesAnexados: [],
   bancoId: '',
 };
 
@@ -39,6 +40,7 @@ const initialAtividadeRuralData: FormDataAtividadeRural = {
   emprestimoRuralValor: '',
   bensAtividadeRural: '',
   fichaSanitaria: null,
+  fichasAnexadas: [],
 };
 
 export function useDeclaracao() {
@@ -48,9 +50,7 @@ export function useDeclaracao() {
   const [participacaoData, setParticipacaoData] = useState<FormDataParticipacao>(initialParticipacaoData);
   const [atividadeRuralData, setAtividadeRuralData] = useState<FormDataAtividadeRural>(initialAtividadeRuralData);
 
-  const addCompraVenda = (_compraVenda: CompraVenda) => {
-    // Função mantida para compatibilidade
-  };
+  const addCompraVenda = (_compraVenda: CompraVenda) => {};
 
   const resetFormData = () => {
     setFormData(initialFormData);

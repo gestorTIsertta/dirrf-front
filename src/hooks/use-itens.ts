@@ -9,6 +9,7 @@ const initialFormData: FormDataCompraVenda = {
   valor: '',
   descricao: '',
   comprovante: null,
+  comprovantesAnexados: [],
   bancoId: '',
 };
 
@@ -31,6 +32,7 @@ export function useItens() {
       valor: item.valor,
       descricao: '',
       comprovante: null,
+      comprovantesAnexados: item.comprovanteFile ? [item.comprovanteFile] : [],
       bancoId: item.bancoId || '',
     });
   };

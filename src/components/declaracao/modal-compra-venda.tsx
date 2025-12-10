@@ -14,8 +14,9 @@ import {
   FormControl,
   Select,
   MenuItem,
+  IconButton,
 } from '@mui/material';
-import { CloudUpload as CloudUploadIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
+import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, Description as DescriptionIcon } from '@mui/icons-material';
 import { FormDataCompraVenda, CompraVenda, Banco } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
 import { getBancoImagem } from 'src/constants/bancos';
@@ -46,7 +47,21 @@ export function ModalCompraVenda({
 
   const handleComprovanteChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
-    onFormDataChange({ ...formData, comprovante: file });
+    if (file) {
+      onFormDataChange({ 
+        ...formData, 
+        comprovantesAnexados: [...formData.comprovantesAnexados, file],
+        comprovante: null 
+      });
+      if (comprovanteFileInputRef.current) {
+        comprovanteFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    const novosArquivos = formData.comprovantesAnexados.filter((_, i) => i !== index);
+    onFormDataChange({ ...formData, comprovantesAnexados: novosArquivos });
   };
 
   const handleSubmit = () => {
@@ -62,7 +77,7 @@ export function ModalCompraVenda({
       operacao: operacao || 'Compra',
       data: formData.data,
       valor: formData.valor,
-      comprovante: formData.comprovante,
+      comprovante: formData.comprovantesAnexados.length > 0 ? formData.comprovantesAnexados[0] : null,
       bancoId: formData.bancoId,
     };
 
@@ -187,6 +202,42 @@ export function ModalCompraVenda({
             <Typography variant="body2" fontWeight={600} mb={1}>
               Anexar Comprovante (opcional)
             </Typography>
+            
+            {formData.comprovantesAnexados.length > 0 && (
+              <Stack spacing={1} mb={2}>
+                {formData.comprovantesAnexados.map((arquivo, index) => (
+                  <Card
+                    key={index}
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      bgcolor: COLORS.grey100,
+                    }}
+                  >
+                    <DescriptionIcon sx={{ color: COLORS.primary, fontSize: 24 }} />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+                        {arquivo.name}
+                      </Typography>
+                      <Typography variant="caption" color={COLORS.grey600}>
+                        {(arquivo.size / 1024 / 1024).toFixed(2)} MB
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleRemoveFile(index)}
+                      sx={{ color: COLORS.primary }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Card>
+                ))}
+              </Stack>
+            )}
+
             <input
               ref={comprovanteFileInputRef}
               type="file"
@@ -212,34 +263,15 @@ export function ModalCompraVenda({
               }}
               onClick={() => comprovanteFileInputRef.current?.click()}
             >
-              {formData.comprovante ? (
-                <Stack spacing={1} alignItems="center">
-                  <CheckCircleIcon sx={{ color: COLORS.success, fontSize: 32 }} />
-                  <Typography variant="body2" fontWeight={600}>
-                    {formData.comprovante.name}
-                  </Typography>
-                  <Button
-                    size="small"
-                    variant="text"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onFormDataChange({ ...formData, comprovante: null });
-                    }}
-                  >
-                    Remover
-                  </Button>
-                </Stack>
-              ) : (
-                <Stack spacing={1} alignItems="center">
-                  <CloudUploadIcon sx={{ fontSize: 32, color: COLORS.primary }} />
-                  <Typography variant="body2" fontWeight={600}>
-                    Clique para selecionar arquivo
-                  </Typography>
-                  <Typography variant="caption" color={COLORS.grey600}>
-                    PDF, JPG, PNG – até 10 MB
-                  </Typography>
-                </Stack>
-              )}
+              <Stack spacing={1} alignItems="center">
+                <CloudUploadIcon sx={{ fontSize: 32, color: COLORS.primary }} />
+                <Typography variant="body2" fontWeight={600}>
+                  Clique para selecionar arquivo
+                </Typography>
+                <Typography variant="caption" color={COLORS.grey600}>
+                  PDF, JPG, PNG – até 10 MB
+                </Typography>
+              </Stack>
             </Card>
           </Box>
         </Stack>

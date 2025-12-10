@@ -14,8 +14,9 @@ import {
   FormControl,
   Select,
   MenuItem,
+  IconButton,
 } from '@mui/material';
-import { CloudUpload as CloudUploadIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
+import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, Description as DescriptionIcon } from '@mui/icons-material';
 import { FormDataAtividadeRural, Banco } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
 import { getBancoImagem } from 'src/constants/bancos';
@@ -41,7 +42,21 @@ export function ModalAtividadeRural({
 
   const handleFichaSanitariaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
-    onFormDataChange({ ...formData, fichaSanitaria: file });
+    if (file) {
+      onFormDataChange({ 
+        ...formData, 
+        fichasAnexadas: [...formData.fichasAnexadas, file],
+        fichaSanitaria: null 
+      });
+      if (fichaSanitariaInputRef.current) {
+        fichaSanitariaInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    const novosArquivos = formData.fichasAnexadas.filter((_, i) => i !== index);
+    onFormDataChange({ ...formData, fichasAnexadas: novosArquivos });
   };
 
   const handleSubmit = () => {
@@ -163,6 +178,42 @@ export function ModalAtividadeRural({
             <Typography variant="subtitle2" fontWeight={700} mb={1}>
               Ficha Sanitária
             </Typography>
+            
+            {formData.fichasAnexadas.length > 0 && (
+              <Stack spacing={1} mb={2}>
+                {formData.fichasAnexadas.map((arquivo, index) => (
+                  <Card
+                    key={index}
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      bgcolor: COLORS.grey100,
+                    }}
+                  >
+                    <DescriptionIcon sx={{ color: COLORS.primary, fontSize: 24 }} />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+                        {arquivo.name}
+                      </Typography>
+                      <Typography variant="caption" color={COLORS.grey600}>
+                        {(arquivo.size / 1024 / 1024).toFixed(2)} MB
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleRemoveFile(index)}
+                      sx={{ color: COLORS.primary }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Card>
+                ))}
+              </Stack>
+            )}
+
             <input
               ref={fichaSanitariaInputRef}
               type="file"
@@ -188,34 +239,15 @@ export function ModalAtividadeRural({
               }}
               onClick={() => fichaSanitariaInputRef.current?.click()}
             >
-              {formData.fichaSanitaria ? (
-                <Stack spacing={1} alignItems="center">
-                  <CheckCircleIcon sx={{ color: COLORS.success, fontSize: 32 }} />
-                  <Typography variant="body2" fontWeight={600}>
-                    {formData.fichaSanitaria.name}
-                  </Typography>
-                  <Button
-                    size="small"
-                    variant="text"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onFormDataChange({ ...formData, fichaSanitaria: null });
-                    }}
-                  >
-                    Remover
-                  </Button>
-                </Stack>
-              ) : (
-                <Stack spacing={1} alignItems="center">
-                  <CloudUploadIcon sx={{ fontSize: 32, color: COLORS.primary }} />
-                  <Typography variant="body2" fontWeight={600}>
-                    Clique para anexar documento
-                  </Typography>
-                  <Typography variant="caption" color={COLORS.grey600}>
-                    PDF, JPG, PNG – até 10 MB
-                  </Typography>
-                </Stack>
-              )}
+              <Stack spacing={1} alignItems="center">
+                <CloudUploadIcon sx={{ fontSize: 32, color: COLORS.primary }} />
+                <Typography variant="body2" fontWeight={600}>
+                  Clique para anexar documento
+                </Typography>
+                <Typography variant="caption" color={COLORS.grey600}>
+                  PDF, JPG, PNG – até 10 MB
+                </Typography>
+              </Stack>
             </Card>
           </Box>
         </Stack>

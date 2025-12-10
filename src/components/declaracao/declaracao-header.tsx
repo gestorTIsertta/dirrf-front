@@ -1,22 +1,14 @@
 import {
-  Box,
   Card,
   Stack,
-  Button,
   FormControl,
   MenuItem,
   Select,
 } from '@mui/material';
-import { Save as SaveIcon, Send as SendIcon } from '@mui/icons-material';
 import { COLORS } from 'src/constants/declaracao';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
-interface DeclaracaoHeaderProps {
-  onSave?: () => void;
-  onSend?: () => void;
-}
-
-export function DeclaracaoHeader({ onSave, onSend }: Readonly<DeclaracaoHeaderProps>) {
+export function DeclaracaoHeader() {
   const breadcrumbsAction = (
     <Stack
       direction={{ xs: 'column', sm: 'row' }}
@@ -40,45 +32,6 @@ export function DeclaracaoHeader({ onSave, onSend }: Readonly<DeclaracaoHeaderPr
           </MenuItem>
         </Select>
       </FormControl>
-      <Button
-        variant="outlined"
-        startIcon={<SaveIcon />}
-        onClick={onSave}
-        sx={{
-          width: { xs: '100%', sm: 'auto', md: 'auto' },
-          minWidth: { xs: 'auto', sm: 120 },
-          '& .MuiButton-startIcon': { mr: { xs: 1, sm: 0.5 } },
-        }}
-      >
-        <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-          Salvar rascunho
-        </Box>
-        <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-          Salvar
-        </Box>
-      </Button>
-      <Button
-        variant="contained"
-        startIcon={<SendIcon />}
-        onClick={onSend}
-        sx={{
-          width: { xs: '100%', sm: 'auto', md: 'auto' },
-          minWidth: { xs: 'auto', sm: 140 },
-          bgcolor: COLORS.primary,
-          '&:hover': { bgcolor: COLORS.primaryDark },
-          '& .MuiButton-startIcon': { mr: { xs: 1, sm: 0.5 } },
-        }}
-      >
-        <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>
-          Enviar para contabilidade
-        </Box>
-        <Box component="span" sx={{ display: { xs: 'none', sm: 'inline', md: 'none' } }}>
-          Enviar
-        </Box>
-        <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-          Enviar
-        </Box>
-      </Button>
     </Stack>
   );
 
