@@ -85,7 +85,12 @@ export interface Banco {
   agencia: string;
   tipo: 'Corrente' | 'Poupança';
   dataAbertura: string;
-  informeRendimentos?: File | null;
+  informeRendimentos?: File | null; // Arquivo em memória (quando anexado no formulário)
+  informeRendimentoMetadata?: {
+    fileName: string;
+    storagePath: string;
+    uploadedAt: string;
+  } | null; // Metadados do arquivo no storage (vem do backend)
 }
 
 export interface FormDataEmprestimo {

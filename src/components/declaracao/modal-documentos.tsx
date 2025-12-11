@@ -15,7 +15,8 @@ import { COLORS } from 'src/constants/declaracao';
 interface DocumentoAnexado {
   id: string;
   nome: string;
-  arquivo: File | string; // File para novos uploads, string para URLs
+  arquivo?: File | string; // File para novos uploads, string para URLs
+  storagePath?: string; // Caminho no storage (para carregar do backend)
 }
 
 interface ModalDocumentosProps {
@@ -26,13 +27,30 @@ interface ModalDocumentosProps {
 }
 
 export function ModalDocumentos({ open, onClose, documentos, titulo = 'Documentos Anexados' }: Readonly<ModalDocumentosProps>) {
-  const handleOpenDocument = (documento: DocumentoAnexado) => {
-    if (typeof documento.arquivo === 'string') {
-      window.open(documento.arquivo, '_blank');
-    } else {
-      const url = URL.createObjectURL(documento.arquivo);
-      window.open(url, '_blank');
-      setTimeout(() => URL.revokeObjectURL(url), 100);
+  const handleOpenDocument = async (documento: DocumentoAnexado) => {
+    // Se tiver storagePath, carregar do backend
+    if (documento.storagePath) {
+      try {
+        const { getDocument, base64ToDataUrl } = await import('src/api/requests/documents');
+        const documentData = await getDocument(documento.storagePath);
+        const dataUrl = base64ToDataUrl(documentData.base64, documentData.mimeType);
+        window.open(dataUrl, '_blank');
+      } catch (error) {
+        console.error('Erro ao carregar documento:', error);
+        alert('Erro ao carregar o documento. Tente novamente.');
+      }
+      return;
+    }
+    
+    // Se tiver arquivo em memória
+    if (documento.arquivo) {
+      if (typeof documento.arquivo === 'string') {
+        window.open(documento.arquivo, '_blank');
+      } else {
+        const url = URL.createObjectURL(documento.arquivo);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+      }
     }
   };
 

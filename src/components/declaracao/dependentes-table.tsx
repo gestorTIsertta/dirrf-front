@@ -8,6 +8,7 @@ import { ModalDependente } from './modal-dependente';
 import { ActionButtons } from './action-buttons';
 import { useDependentes } from 'src/hooks/use-dependentes';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
+import { formatCPF, formatDate } from 'src/utils/format';
 
 interface DependentesTableProps {
   dependentes?: Dependente[];
@@ -69,23 +70,6 @@ export function DependentesTable({ dependentes: dependentesProp, onDependentesCh
     });
   };
 
-  const formatCPF = (cpf: string) => {
-    const cleaned = cpf.replace(/\D/g, '');
-    if (cleaned.length === 11) {
-      return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    }
-    if (cpf.includes('.') || cpf.includes('-')) {
-      return cpf;
-    }
-    return cleaned;
-  };
-
-  const formatDate = (date: string) => {
-    if (!date) return '';
-    const dateObj = new Date(date);
-    if (isNaN(dateObj.getTime())) return date;
-    return dateObj.toLocaleDateString('pt-BR');
-  };
 
   return (
     <>

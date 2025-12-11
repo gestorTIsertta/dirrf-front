@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dependente, FormDataDependente } from 'src/types/declaracao';
+import { formatDateToInput } from 'src/utils/date-format';
 
 const initialFormData: FormDataDependente = {
   nomeCompleto: '',
@@ -48,7 +49,8 @@ export function useDependentes({ initialDependentes, onDependentesChange }: UseD
     setFormData({
       nomeCompleto: dependente.nomeCompleto,
       cpf: dependente.cpf,
-      dataNascimento: dependente.dataNascimento,
+      // Converte DD/MM/YYYY para YYYY-MM-DD para o DatePickerField
+      dataNascimento: formatDateToInput(dependente.dataNascimento),
       grauParentesco: dependente.grauParentesco,
       nomeMae: dependente.nomeMae || '',
       nacionalidade: dependente.nacionalidade || '',

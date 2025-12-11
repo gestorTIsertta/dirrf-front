@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Container } from '@mui/material';
 import { useDeclaracao } from 'src/hooks/use-declaracao';
 import { useModals } from 'src/hooks/use-modals';
+import { useDeclaracaoYear } from 'src/hooks/use-declaracao-year';
 import { DeclaracaoHeader } from 'src/components/declaracao/declaracao-header';
 import { ResumoCards } from 'src/components/declaracao/resumo-cards';
 import { CategoriasGrid } from 'src/components/declaracao/categorias-grid';
@@ -20,31 +21,9 @@ import { ModalAtividadeRural } from 'src/components/declaracao/modal-atividade-r
 import { COLORS } from 'src/constants/declaracao';
 import { Banco } from 'src/types/declaracao';
 
-const criarArquivoExemplo = (nome: string, tipo: string = 'application/pdf'): File => {
-  const blob = new Blob(['Conteúdo do arquivo de exemplo'], { type: tipo });
-  return new File([blob], nome, { type: tipo, lastModified: Date.now() });
-};
-
 export default function DeclaracaoView() {
-  const [bancos, setBancos] = useState<Banco[]>([
-    {
-      id: '1',
-      nome: 'Banco do Brasil',
-      conta: '12345-6',
-      agencia: '1234-5',
-      tipo: 'Corrente',
-      dataAbertura: '15/03/2020',
-      informeRendimentos: criarArquivoExemplo('Informe_Rendimentos_BB_2024.pdf'),
-    },
-    {
-      id: '2',
-      nome: 'Itaú',
-      conta: '78901-2',
-      agencia: '5678-9',
-      tipo: 'Poupança',
-      dataAbertura: '22/05/2019',
-    },
-  ]);
+  const { year, setYear } = useDeclaracaoYear();
+  const [bancos, setBancos] = useState<Banco[]>([]);
 
   const {
     formData,
@@ -150,11 +129,11 @@ export default function DeclaracaoView() {
   return (
     <Box sx={{ bgcolor: COLORS.grey100, minHeight: '100vh', py: { xs: 2, sm: 3 } }}>
       <Container maxWidth="lg" sx={{ px: { xs: 1.5, sm: 2, md: 3 } }}>
-        <DeclaracaoHeader />
+        <DeclaracaoHeader year={year} onYearChange={setYear} />
 
         <ResumoCards />
 
-        <BancosTable bancos={bancos} onBancosChange={setBancos} />
+        <BancosTable year={year} bancos={bancos} onBancosChange={setBancos} />
 
         <DependentesTable />
 
@@ -167,7 +146,7 @@ export default function DeclaracaoView() {
           onVendaClick={(categoria) => handleOpenCompraVenda('Venda', categoria)}
         />
 
-        <ItensTable bancos={bancos} />
+        <ItensTable year={year} bancos={bancos} />
 
         <ChecklistSection />
 

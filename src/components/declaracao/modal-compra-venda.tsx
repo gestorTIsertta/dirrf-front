@@ -21,6 +21,7 @@ import { FormDataCompraVenda, CompraVenda, Banco } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
 import { getBancoImagem } from 'src/constants/bancos';
 import { DatePickerField } from './date-picker-field';
+import { CurrencyInputField } from './currency-input';
 
 interface ModalCompraVendaProps {
   open: boolean;
@@ -123,12 +124,14 @@ export function ModalCompraVenda({
             onChange={(e) => onFormDataChange({ ...formData, data: e.target.value })}
             required
           />
-          <TextField
+          <CurrencyInputField
             fullWidth
             label="Valor (R$)"
             placeholder="0,00"
             value={formData.valor}
-            onChange={(e) => onFormDataChange({ ...formData, valor: e.target.value })}
+            onChange={(value) => {
+              onFormDataChange({ ...formData, valor: value || '' });
+            }}
             required
           />
           <TextField

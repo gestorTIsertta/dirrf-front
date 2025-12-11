@@ -20,6 +20,7 @@ import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, Description as De
 import { FormDataAtividadeRural, Banco } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
 import { getBancoImagem } from 'src/constants/bancos';
+import { CurrencyInputField } from './currency-input';
 
 interface ModalAtividadeRuralProps {
   open: boolean;
@@ -152,12 +153,14 @@ export function ModalAtividadeRural({
                   )}
                 </Select>
               </FormControl>
-              <TextField
+              <CurrencyInputField
                 fullWidth
                 label="Valor (R$)"
                 placeholder="0,00"
                 value={formData.emprestimoRuralValor}
-                onChange={(e) => onFormDataChange({ ...formData, emprestimoRuralValor: e.target.value })}
+                onChange={(value) => {
+                  onFormDataChange({ ...formData, emprestimoRuralValor: value || '' });
+                }}
                 required
               />
             </Stack>

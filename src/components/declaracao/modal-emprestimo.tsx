@@ -5,7 +5,6 @@ import {
   DialogActions,
   Divider,
   Stack,
-  TextField,
   Button,
   Typography,
   FormControl,
@@ -17,6 +16,7 @@ import { FormDataEmprestimo, Banco } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
 import { getBancoImagem } from 'src/constants/bancos';
 import { DatePickerField } from './date-picker-field';
+import { CurrencyInputField } from './currency-input';
 
 interface ModalEmprestimoProps {
   open: boolean;
@@ -129,12 +129,14 @@ export function ModalEmprestimo({
               )}
             </Select>
           </FormControl>
-          <TextField
+          <CurrencyInputField
             fullWidth
             label="Valor (R$)"
             placeholder="0,00"
             value={formData.valor}
-            onChange={(e) => onFormDataChange({ ...formData, valor: e.target.value })}
+            onChange={(value) => {
+              onFormDataChange({ ...formData, valor: value || '' });
+            }}
             required
           />
         </Stack>

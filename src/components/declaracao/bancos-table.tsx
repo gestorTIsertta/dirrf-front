@@ -11,26 +11,27 @@ import { ModalDocumentos } from './modal-documentos';
 import { ActionButtons } from './action-buttons';
 import { useBancos } from 'src/hooks/use-bancos';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
+import { formatDate } from 'src/utils/format';
 
 interface BancosTableProps {
+  year: number;
   bancos?: Banco[];
   onBancosChange?: (bancos: Banco[]) => void;
 }
 
-export function BancosTable({ bancos: bancosProp, onBancosChange }: Readonly<BancosTableProps>) {
+export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readonly<BancosTableProps>) {
   const {
     bancos,
     formData,
     setFormData,
     editingId,
     fileInputRef,
-    updateBancos,
     addBanco,
     updateBanco,
     deleteBanco,
     prepareEditForm,
     resetForm,
-  } = useBancos({ initialBancos: bancosProp, onBancosChange });
+  } = useBancos({ year, initialBancos: bancosProp, onBancosChange });
 
   const { isOpen, itemToDelete, openModal, closeModal, confirmDelete } = useDeleteModal<Banco>();
   const [modalOpen, setModalOpen] = useState(false);
@@ -51,16 +52,18 @@ export function BancosTable({ bancos: bancosProp, onBancosChange }: Readonly<Ban
     resetForm();
   };
 
-  const handleSubmit = (banco: Banco) => {
-    if (editingId) {
-      updateBanco(editingId, banco);
-      const updatedBancos = bancos.map((b) => (b.id === editingId ? banco : b));
-      updateBancos(updatedBancos);
-    } else {
-      addBanco(banco);
-      updateBancos([...bancos, banco]);
+  const handleSubmit = async (banco: Banco) => {
+    try {
+      if (editingId) {
+        await updateBanco(editingId, banco);
+      } else {
+        await addBanco(banco);
+      }
+      handleCloseModal();
+    } catch (err) {
+      // Erro já foi tratado no hook, apenas não fechar o modal se houver erro
+      console.error('Erro ao salvar banco:', err);
     }
-    handleCloseModal();
   };
 
   const handleOpenDeleteModal = (banco: Banco) => {
@@ -68,10 +71,12 @@ export function BancosTable({ bancos: bancosProp, onBancosChange }: Readonly<Ban
   };
 
   const handleConfirmDelete = () => {
-    confirmDelete((banco) => {
-      deleteBanco(banco.id);
-      const updatedBancos = bancos.filter((b) => b.id !== banco.id);
-      updateBancos(updatedBancos);
+    confirmDelete(async (banco) => {
+      try {
+        await deleteBanco(banco.id);
+      } catch (err) {
+        console.error('Erro ao deletar banco:', err);
+      }
     });
   };
 
@@ -86,16 +91,33 @@ export function BancosTable({ bancos: bancosProp, onBancosChange }: Readonly<Ban
   };
 
   const getDocumentosBanco = () => {
-    if (!bancoSelecionado || !bancoSelecionado.informeRendimentos) {
+    if (!bancoSelecionado) {
       return [];
     }
-    return [
-      {
-        id: bancoSelecionado.id,
-        nome: bancoSelecionado.informeRendimentos.name || 'Informe de Rendimentos',
-        arquivo: bancoSelecionado.informeRendimentos,
-      },
-    ];
+    
+    // Se tiver arquivo em memória (anexado no formulário)
+    if (bancoSelecionado.informeRendimentos) {
+      return [
+        {
+          id: bancoSelecionado.id,
+          nome: bancoSelecionado.informeRendimentos.name || 'Informe de Rendimentos',
+          arquivo: bancoSelecionado.informeRendimentos,
+        },
+      ];
+    }
+    
+    // Se tiver metadados do arquivo no storage (vem do backend)
+    if (bancoSelecionado.informeRendimentoMetadata) {
+      return [
+        {
+          id: bancoSelecionado.id,
+          nome: bancoSelecionado.informeRendimentoMetadata.fileName || 'Informe de Rendimentos',
+          storagePath: bancoSelecionado.informeRendimentoMetadata.storagePath,
+        },
+      ];
+    }
+    
+    return [];
   };
 
   return (
@@ -211,10 +233,10 @@ export function BancosTable({ bancos: bancosProp, onBancosChange }: Readonly<Ban
                       {banco.tipo}
                     </TableCell>
                     <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, py: { xs: 1, sm: 1.5 } }}>
-                      {banco.dataAbertura}
+                      {formatDate(banco.dataAbertura)}
                     </TableCell>
                     <TableCell sx={{ py: { xs: 1, sm: 1.5 } }}>
-                      {banco.informeRendimentos ? (
+                      {(banco.informeRendimentos || banco.informeRendimentoMetadata) ? (
                         <Tooltip title="Visualizar documento">
                           <IconButton
                             size="small"

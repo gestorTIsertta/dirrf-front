@@ -12,13 +12,15 @@ import { ActionButtons } from './action-buttons';
 import { useItens } from 'src/hooks/use-itens';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
 import { ItemDeclarado, Banco } from 'src/types/declaracao';
+import { formatDate, formatCurrency } from 'src/utils/format';
 
 interface ItensTableProps {
+  year: number;
   bancos: Banco[];
 }
 
-export function ItensTable({ bancos }: Readonly<ItensTableProps>) {
-  const { itens, formData, setFormData, updateItem, deleteItem, prepareEditForm, resetForm } = useItens();
+export function ItensTable({ year, bancos }: Readonly<ItensTableProps>) {
+  const { itens, formData, setFormData, updateItem, deleteItem, prepareEditForm, resetForm } = useItens({ year });
   const { isOpen, itemToDelete, openModal, closeModal, confirmDelete } = useDeleteModal<ItemDeclarado>();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<ItemDeclarado | null>(null);
@@ -37,9 +39,13 @@ export function ItensTable({ bancos }: Readonly<ItensTableProps>) {
     resetForm();
   };
 
-  const handleSubmitEdit = (itemAtualizado: ItemDeclarado) => {
-    updateItem(itemAtualizado);
-    handleCloseEditModal();
+  const handleSubmitEdit = async (itemAtualizado: ItemDeclarado) => {
+    try {
+      await updateItem(itemAtualizado);
+      handleCloseEditModal();
+    } catch (err) {
+      console.error('Erro ao atualizar item:', err);
+    }
   };
 
   const handleOpenDeleteModal = (item: ItemDeclarado) => {
@@ -47,8 +53,12 @@ export function ItensTable({ bancos }: Readonly<ItensTableProps>) {
   };
 
   const handleConfirmDelete = () => {
-    confirmDelete((item) => {
-      deleteItem(item.id);
+    confirmDelete(async (item) => {
+      try {
+        await deleteItem(item.id);
+      } catch (err) {
+        console.error('Erro ao deletar item:', err);
+      }
     });
   };
 
@@ -147,10 +157,10 @@ export function ItensTable({ bancos }: Readonly<ItensTableProps>) {
                   <OperacaoChip operacao={item.operacao} />
                 </TableCell>
                 <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, py: { xs: 1, sm: 1.5 } }}>
-                  {item.data}
+                  {formatDate(item.data)}
                 </TableCell>
                 <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, py: { xs: 1, sm: 1.5 } }}>
-                  {item.valor}
+                  {formatCurrency(item.valor)}
                 </TableCell>
                 <TableCell sx={{ py: { xs: 1, sm: 1.5 } }}>
                   {item.comprovante && item.comprovanteFile ? (

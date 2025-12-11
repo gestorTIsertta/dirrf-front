@@ -8,6 +8,7 @@ import { ModalServicoTomado } from './modal-servico-tomado';
 import { ActionButtons } from './action-buttons';
 import { useServicosTomados } from 'src/hooks/use-servicos-tomados';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
+import { formatCPFCNPJ, formatCurrency } from 'src/utils/format';
 
 interface ServicosTomadosTableProps {
   servicosTomados?: ServicoTomado[];
@@ -69,22 +70,6 @@ export function ServicosTomadosTable({ servicosTomados: servicosTomadosProp, onS
     });
   };
 
-  const formatCPFCNPJ = (cpfCnpj: string) => {
-    const cleaned = cpfCnpj.replace(/\D/g, '');
-    if (cleaned.length === 11) {
-      return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    } else if (cleaned.length === 14) {
-      return cleaned.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-    }
-    return cpfCnpj;
-  };
-
-  const formatCurrency = (value: string) => {
-    if (!value) return 'R$ 0,00';
-    const numValue = parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.'));
-    if (isNaN(numValue)) return value;
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numValue);
-  };
 
   return (
     <>

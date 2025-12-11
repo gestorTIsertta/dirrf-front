@@ -15,6 +15,7 @@ import {
 import { FormDataDependente, Dependente } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
 import { DatePickerField } from './date-picker-field';
+import { formatCPF } from 'src/utils/format';
 
 interface ModalDependenteProps {
   open: boolean;
@@ -49,13 +50,6 @@ const nacionalidades = [
   'Outro',
 ];
 
-const formatCPF = (value: string) => {
-  const cleaned = value.replace(/\D/g, '');
-  if (cleaned.length <= 11) {
-    return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4').replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
-  }
-  return value;
-};
 
 export function ModalDependente({
   open,

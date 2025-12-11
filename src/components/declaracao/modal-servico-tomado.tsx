@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 import { FormDataServicoTomado, ServicoTomado } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
+import { formatCPFCNPJ, unformatCPFCNPJ } from 'src/utils/format';
+import { CurrencyInputField } from './currency-input';
 
 interface ModalServicoTomadoProps {
   open: boolean;
@@ -45,25 +47,6 @@ const tiposServico = [
   'Outros',
 ];
 
-const formatCPFCNPJ = (value: string) => {
-  const cleaned = value.replace(/\D/g, '');
-  if (cleaned.length <= 11) {
-    return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4').replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
-  } else if (cleaned.length <= 14) {
-    return cleaned.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-  }
-  return value;
-};
-
-const formatCurrency = (value: string) => {
-  const cleaned = value.replace(/\D/g, '');
-  if (!cleaned) return '';
-  const numValue = parseFloat(cleaned) / 100;
-  return new Intl.NumberFormat('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numValue);
-};
 
 export function ModalServicoTomado({
   open,
@@ -79,7 +62,7 @@ export function ModalServicoTomado({
       return;
     }
 
-    const cpfCnpjLimpo = formData.cpfCnpj.replace(/\D/g, '');
+    const cpfCnpjLimpo = unformatCPFCNPJ(formData.cpfCnpj);
     if (cpfCnpjLimpo.length !== 11 && cpfCnpjLimpo.length !== 14) {
       alert('CPF deve conter 11 dígitos ou CNPJ deve conter 14 dígitos');
       return;
@@ -103,10 +86,6 @@ export function ModalServicoTomado({
     onFormDataChange({ ...formData, cpfCnpj: formatted });
   };
 
-  const handleValorChange = (field: 'valorTotal' | 'valorReembolsado', e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const formatted = formatCurrency(e.target.value);
-    onFormDataChange({ ...formData, [field]: formatted });
-  };
 
   const valorTotalNum = parseFloat(formData.valorTotal.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
   const valorReembolsadoNum = parseFloat((formData.valorReembolsado || '0').replace(/[^\d,]/g, '').replace(',', '.')) || 0;
@@ -175,22 +154,26 @@ export function ModalServicoTomado({
             </Select>
           </FormControl>
 
-          <TextField
+          <CurrencyInputField
             fullWidth
             label="Valor Total Pago no Ano (R$)"
             placeholder="0,00"
             value={formData.valorTotal}
-            onChange={(e) => handleValorChange('valorTotal', e)}
+            onChange={(value) => {
+              onFormDataChange({ ...formData, valorTotal: value || '' });
+            }}
             required
             helperText="Valor total pago no ano-calendário"
           />
 
-          <TextField
+          <CurrencyInputField
             fullWidth
             label="Valor Reembolsado (R$)"
             placeholder="0,00"
             value={formData.valorReembolsado}
-            onChange={(e) => handleValorChange('valorReembolsado', e)}
+            onChange={(value) => {
+              onFormDataChange({ ...formData, valorReembolsado: value || '' });
+            }}
             helperText="Ex: reembolso de plano de saúde. Deixe em branco se não houver reembolso."
           />
 

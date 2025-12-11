@@ -8,7 +8,15 @@ import {
 import { COLORS } from 'src/constants/declaracao';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
-export function DeclaracaoHeader() {
+interface DeclaracaoHeaderProps {
+  year: number;
+  onYearChange: (year: number) => void;
+}
+
+export function DeclaracaoHeader({ year, onYearChange }: DeclaracaoHeaderProps) {
+  const currentYear = new Date().getFullYear();
+  const availableYears = [currentYear, currentYear - 1, currentYear - 2];
+
   const breadcrumbsAction = (
     <Stack
       direction={{ xs: 'column', sm: 'row' }}
@@ -20,16 +28,15 @@ export function DeclaracaoHeader() {
         size="small"
         sx={{ minWidth: { xs: '100%', sm: 120, md: 140 }, width: { xs: '100%', sm: 'auto' } }}
       >
-        <Select defaultValue={new Date().getFullYear().toString()}>
-          <MenuItem value={new Date().getFullYear().toString()}>
-            {new Date().getFullYear()}
-          </MenuItem>
-          <MenuItem value={(new Date().getFullYear() - 1).toString()}>
-            {new Date().getFullYear() - 1}
-          </MenuItem>
-          <MenuItem value={(new Date().getFullYear() - 2).toString()}>
-            {new Date().getFullYear() - 2}
-          </MenuItem>
+        <Select
+          value={year.toString()}
+          onChange={(e) => onYearChange(Number(e.target.value))}
+        >
+          {availableYears.map((y) => (
+            <MenuItem key={y} value={y.toString()}>
+              {y}
+            </MenuItem>
+          ))}
         </Select>
       </FormControl>
     </Stack>

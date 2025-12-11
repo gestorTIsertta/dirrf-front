@@ -1,6 +1,15 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Banco, FormDataBanco } from 'src/types/declaracao';
 import { getCodigoCompeByNome } from 'src/constants/bancos';
+import * as banksApi from 'src/api/requests/banks';
+import {
+  convertTipoContaToBackend,
+  convertTipoContaFromBackend,
+  convertDateToBackend,
+  convertDateFromBackend,
+} from 'src/api/utils/converters';
+import { getDocument, base64ToBlob } from 'src/api/requests/documents';
+import { formatDateToInput } from 'src/utils/date-format';
 
 const initialFormData: FormDataBanco = {
   nome: '',
@@ -12,35 +21,50 @@ const initialFormData: FormDataBanco = {
   informesAnexados: [],
 };
 
-const bancosMock: Banco[] = [
-  {
-    id: '1',
-    nome: 'Banco do Brasil',
-    conta: '12345-6',
-    agencia: '1234-5',
-    tipo: 'Corrente',
-    dataAbertura: '15/03/2020',
-  },
-  {
-    id: '2',
-    nome: 'Itaú',
-    conta: '78901-2',
-    agencia: '5678-9',
-    tipo: 'Poupança',
-    dataAbertura: '22/05/2019',
-  },
-];
-
 interface UseBancosOptions {
+  year: number;
   initialBancos?: Banco[];
   onBancosChange?: (bancos: Banco[]) => void;
 }
 
-export function useBancos({ initialBancos, onBancosChange }: UseBancosOptions = {}) {
-  const [bancos, setBancos] = useState<Banco[]>(initialBancos || bancosMock);
+export function useBancos({ year, initialBancos, onBancosChange }: UseBancosOptions) {
+  const [bancos, setBancos] = useState<Banco[]>(initialBancos || []);
   const [formData, setFormData] = useState<FormDataBanco>(initialFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Carregar bancos do backend
+  const loadBancos = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await banksApi.listBanks(year);
+      const bancosConvertidos: Banco[] = response.banks.map((bank) => ({
+        id: bank.id,
+        nome: bank.nome,
+        conta: bank.conta,
+        agencia: bank.agencia,
+        tipo: convertTipoContaFromBackend(bank.tipoConta),
+        dataAbertura: convertDateFromBackend(bank.dataAbertura),
+        informeRendimentos: null,
+        informeRendimentoMetadata: bank.informeRendimento || null,
+      }));
+      setBancos(bancosConvertidos);
+      onBancosChange?.(bancosConvertidos);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar bancos');
+      console.error('Erro ao carregar bancos:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [year, onBancosChange]);
+
+  // Carregar bancos quando o ano mudar
+  useEffect(() => {
+    loadBancos();
+  }, [loadBancos]);
 
   useEffect(() => {
     if (initialBancos) {
@@ -76,16 +100,111 @@ export function useBancos({ initialBancos, onBancosChange }: UseBancosOptions = 
     onBancosChange?.(newBancos);
   };
 
-  const addBanco = (banco: Banco) => {
-    setBancos((prev) => [...prev, banco]);
+  const addBanco = async (banco: Banco) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await banksApi.createBank(year, {
+        nome: banco.nome,
+        conta: banco.conta,
+        agencia: banco.agencia,
+        tipoConta: convertTipoContaToBackend(banco.tipo),
+        dataAbertura: convertDateToBackend(banco.dataAbertura),
+      });
+
+      const novoBanco: Banco = {
+        id: response.bank.id,
+        nome: response.bank.nome,
+        conta: response.bank.conta,
+        agencia: response.bank.agencia,
+        tipo: convertTipoContaFromBackend(response.bank.tipoConta),
+        dataAbertura: convertDateFromBackend(response.bank.dataAbertura),
+        informeRendimentos: null,
+        informeRendimentoMetadata: response.bank.informeRendimento || null,
+      };
+
+      if (banco.informeRendimentos) {
+        await uploadInforme(response.bank.id, banco.informeRendimentos);
+      }
+
+      setBancos((prev) => [...prev, novoBanco]);
+      onBancosChange?.([...bancos, novoBanco]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao criar banco');
+      console.error('Erro ao criar banco:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateBanco = (id: string, bancoAtualizado: Banco) => {
-    setBancos((prev) => prev.map((b) => (b.id === id ? bancoAtualizado : b)));
+  const updateBanco = async (id: string, bancoAtualizado: Banco) => {
+    try {
+      setLoading(true);
+      setError(null);
+      await banksApi.updateBank(year, id, {
+        nome: bancoAtualizado.nome,
+        conta: bancoAtualizado.conta,
+        agencia: bancoAtualizado.agencia,
+        tipoConta: convertTipoContaToBackend(bancoAtualizado.tipo),
+        dataAbertura: convertDateToBackend(bancoAtualizado.dataAbertura),
+      });
+
+      if (bancoAtualizado.informeRendimentos) {
+        await uploadInforme(id, bancoAtualizado.informeRendimentos);
+      }
+
+      const bancosAtualizados = bancos.map((b) => (b.id === id ? bancoAtualizado : b));
+      setBancos(bancosAtualizados);
+      onBancosChange?.(bancosAtualizados);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao atualizar banco');
+      console.error('Erro ao atualizar banco:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deleteBanco = (id: string) => {
-    setBancos((prev) => prev.filter((b) => b.id !== id));
+  const deleteBanco = async (id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      await banksApi.deleteBank(year, id);
+      const bancosAtualizados = bancos.filter((b) => b.id !== id);
+      setBancos(bancosAtualizados);
+      onBancosChange?.(bancosAtualizados);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao deletar banco');
+      console.error('Erro ao deletar banco:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const uploadInforme = async (bankId: string, file: File) => {
+    try {
+      await banksApi.uploadInforme(year, bankId, file);
+      // Recarregar bancos para obter o informe atualizado
+      await loadBancos();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao fazer upload do informe');
+      console.error('Erro ao fazer upload do informe:', err);
+      throw err;
+    }
+  };
+
+  const loadInformeRendimento = async (bank: Banco, storagePath: string) => {
+    try {
+      const document = await getDocument(storagePath);
+      const blob = base64ToBlob(document.base64, document.mimeType);
+      const file = new File([blob], document.fileName, { type: document.mimeType });
+      return file;
+    } catch (err) {
+      console.error('Erro ao carregar informe de rendimento:', err);
+      return null;
+    }
   };
 
   const prepareEditForm = (banco: Banco) => {
@@ -94,9 +213,9 @@ export function useBancos({ initialBancos, onBancosChange }: UseBancosOptions = 
       conta: banco.conta,
       agencia: banco.agencia,
       tipo: banco.tipo,
-      dataAbertura: banco.dataAbertura,
-      informeRendimentos: banco.informeRendimentos || null,
-      informesAnexados: banco.informeRendimentos ? [banco.informeRendimentos] : [],
+      dataAbertura: formatDateToInput(banco.dataAbertura),
+      informeRendimentos: null,
+      informesAnexados: [],
     });
     setEditingId(banco.id);
   };
@@ -112,12 +231,17 @@ export function useBancos({ initialBancos, onBancosChange }: UseBancosOptions = 
     setFormData,
     editingId,
     fileInputRef,
+    loading,
+    error,
     updateBancos,
     addBanco,
     updateBanco,
     deleteBanco,
     prepareEditForm,
     resetForm,
+    loadBancos,
+    uploadInforme,
+    loadInformeRendimento,
   };
 }
 
