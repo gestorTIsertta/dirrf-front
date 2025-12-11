@@ -1,6 +1,7 @@
 import { Navigate, useRoutes } from 'react-router-dom';
 
 import LoginPage from 'src/pages/login';
+import ForgotPasswordPage from 'src/pages/forgot-password';
 import DeclaracaoPage from 'src/pages/declaracao';
 import NotFoundPage from 'src/pages/404';
 import { paths } from './paths';
@@ -14,6 +15,10 @@ export default function Router() {
     {
       path: paths.auth.login,
       element: <LoginPage />,
+    },
+    {
+      path: paths.auth.forgotPassword,
+      element: <ForgotPasswordPage />,
     },
     {
       path: paths.declaracao,

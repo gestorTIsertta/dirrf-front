@@ -7,7 +7,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import 'dayjs/locale/pt-br';
 import { COLORS } from 'src/constants/declaracao';
 
-interface DatePickerFieldProps extends Omit<TextFieldProps, 'value' | 'onChange'> {
+interface DatePickerFieldProps extends Omit<TextFieldProps, 'value' | 'onChange' | 'multiline'> {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }

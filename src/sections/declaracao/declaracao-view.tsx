@@ -8,6 +8,8 @@ import { CategoriasGrid } from 'src/components/declaracao/categorias-grid';
 import { DocumentosList } from 'src/components/declaracao/documentos-list';
 import { ItensTable } from 'src/components/declaracao/itens-table';
 import { BancosTable } from 'src/components/declaracao/bancos-table';
+import { DependentesTable } from 'src/components/declaracao/dependentes-table';
+import { ServicosTomadosTable } from 'src/components/declaracao/servicos-tomados-table';
 import { ChecklistSection } from 'src/components/declaracao/checklist-section';
 import { TimelineSection } from 'src/components/declaracao/timeline-section';
 import { ModalCompraVenda } from 'src/components/declaracao/modal-compra-venda';
@@ -153,6 +155,10 @@ export default function DeclaracaoView() {
         <ResumoCards />
 
         <BancosTable bancos={bancos} onBancosChange={setBancos} />
+
+        <DependentesTable />
+
+        <ServicosTomadosTable />
 
         <DocumentosList onAnexarClick={handleOpenComprovante} />
 

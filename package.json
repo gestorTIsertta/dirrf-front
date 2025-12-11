@@ -22,6 +22,7 @@
     "@mui/material": "^5.14.12",
     "@mui/system": "^5.14.12",
     "@mui/x-date-pickers": "^8.21.0",
+    "axios": "^1.6.0",
     "bancos-brasileiros": "^6.2.115",
     "dayjs": "^1.11.19",
     "firebase": "^10.4.0",

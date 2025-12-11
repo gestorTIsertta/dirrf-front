@@ -118,3 +118,43 @@ export interface FormDataBanco {
   informesAnexados: File[]; // Lista de arquivos já anexados
 }
 
+export interface Dependente {
+  id: string;
+  nomeCompleto: string;
+  cpf: string;
+  dataNascimento: string;
+  grauParentesco: string;
+  nomeMae?: string;
+  nacionalidade?: string;
+  sexo?: 'Masculino' | 'Feminino' | 'Outro';
+}
+
+export interface FormDataDependente {
+  nomeCompleto: string;
+  cpf: string;
+  dataNascimento: string;
+  grauParentesco: string;
+  nomeMae: string;
+  nacionalidade: string;
+  sexo: 'Masculino' | 'Feminino' | 'Outro' | '';
+}
+
+export interface ServicoTomado {
+  id: string;
+  nomePrestador: string;
+  cpfCnpj: string;
+  tipoServico: string;
+  valorTotal: string;
+  valorReembolsado?: string;
+  observacoes?: string;
+}
+
+export interface FormDataServicoTomado {
+  nomePrestador: string;
+  cpfCnpj: string;
+  tipoServico: string;
+  valorTotal: string;
+  valorReembolsado: string;
+  observacoes: string;
+}
+

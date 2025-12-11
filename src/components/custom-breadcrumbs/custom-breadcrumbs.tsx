@@ -11,8 +11,6 @@ import LinkItem from './link-item';
 import { CustomBreadcrumbsProps } from './types';
 import Iconify from '../iconify/iconify';
 
-// ----------------------------------------------------------------------
-
 export default function CustomBreadcrumbs({
   links,
   action,
@@ -84,8 +82,6 @@ export default function CustomBreadcrumbs({
     </Box>
   );
 }
-
-// ----------------------------------------------------------------------
 
 function Separator() {
   return (

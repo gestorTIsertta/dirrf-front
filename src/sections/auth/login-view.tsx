@@ -6,14 +6,19 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import Link from '@mui/material/Link';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useLogin } from 'src/hooks/use-login';
 import Iconify from 'src/components/iconify/iconify';
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 export default function LoginView() {
+  const router = useRouter();
   const password = useBoolean();
-  const { email, password: passwordValue, setEmail, setPassword, handleLogin } = useLogin();
+  const { email, password: passwordValue, setEmail, setPassword, handleLogin, loading } = useLogin();
 
   return (
     <Box
@@ -50,6 +55,12 @@ export default function LoginView() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
+            disabled={loading}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !loading) {
+                handleLogin();
+              }
+            }}
           />
 
           <TextField
@@ -59,19 +70,43 @@ export default function LoginView() {
             value={passwordValue}
             onChange={(e) => setPassword(e.target.value)}
             type={password.value ? 'text' : 'password'}
+            disabled={loading}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton onClick={password.onToggle} edge="end">
+                  <IconButton onClick={password.onToggle} edge="end" disabled={loading}>
                     <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
                   </IconButton>
                 </InputAdornment>
               ),
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !loading) {
+                handleLogin();
+              }
+            }}
           />
 
-          <Button fullWidth size="large" variant="contained" onClick={handleLogin}>
-            Entrar
+          <Link
+            component="button"
+            type="button"
+            variant="body2"
+            onClick={() => router.push(paths.auth.forgotPassword)}
+            sx={{ alignSelf: 'flex-end', textDecoration: 'none' }}
+            disabled={loading}
+          >
+            Esqueci minha senha
+          </Link>
+
+          <Button
+            fullWidth
+            size="large"
+            variant="contained"
+            onClick={handleLogin}
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+          >
+            {loading ? 'Entrando...' : 'Entrar'}
           </Button>
         </Stack>
       </Card>
