@@ -15,8 +15,9 @@ import {
   MenuItem,
   Autocomplete,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
-import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, Description as DescriptionIcon } from '@mui/icons-material';
+import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, Description as DescriptionIcon, Visibility as VisibilityIcon } from '@mui/icons-material';
 import { Banco, FormDataBanco } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
 import { getBancoOptionsOrdenados, getBancoImagem } from 'src/constants/bancos';
@@ -30,6 +31,7 @@ interface ModalBancoProps {
   onFormDataChange: (data: FormDataBanco) => void;
   editingId: string | null;
   fileInputRef: React.RefObject<HTMLInputElement>;
+  loading?: boolean;
 }
 
 export function ModalBanco({
@@ -40,6 +42,7 @@ export function ModalBanco({
   onFormDataChange,
   editingId,
   fileInputRef,
+  loading = false,
 }: Readonly<ModalBancoProps>) {
   const todosBancos = getBancoOptionsOrdenados();
 
@@ -62,6 +65,24 @@ export function ModalBanco({
     onFormDataChange({ ...formData, informesAnexados: novosArquivos });
   };
 
+  const handleRemoveInformeExistente = () => {
+    onFormDataChange({ ...formData, informeExistente: null });
+  };
+
+  const handleViewInformeExistente = async () => {
+    if (formData.informeExistente?.file) {
+      const blobUrl = URL.createObjectURL(formData.informeExistente.file);
+      const newWindow = window.open(blobUrl, '_blank');
+      setTimeout(() => {
+        if (newWindow) {
+          URL.revokeObjectURL(blobUrl);
+        } else {
+          URL.revokeObjectURL(blobUrl);
+        }
+      }, 1000);
+    }
+  };
+
   const handleSubmit = () => {
     if (!formData.nome || !formData.conta || !formData.agencia || !formData.dataAbertura) {
       alert('Por favor, preencha todos os campos obrigatórios');
@@ -79,6 +100,12 @@ export function ModalBanco({
       tipo: formData.tipo,
       dataAbertura: formData.dataAbertura,
       informeRendimentos: formData.informesAnexados.length > 0 ? formData.informesAnexados[0] : undefined,
+      informeRemovido: editingId !== null && formData.informeExistente === null && formData.informesAnexados.length === 0,
+      informeRendimentoMetadata: formData.informeExistente ? {
+        fileName: formData.informeExistente.fileName,
+        storagePath: formData.informeExistente.storagePath,
+        uploadedAt: formData.informeExistente.uploadedAt,
+      } : undefined,
     };
 
     onSubmit(banco);
@@ -211,6 +238,47 @@ export function ModalBanco({
               Informe de Rendimentos (opcional)
             </Typography>
             
+            {formData.informeExistente && (
+              <Stack spacing={1} mb={2}>
+                <FileCard
+                  variant="outlined"
+                  sx={{
+                    p: 1.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    bgcolor: COLORS.grey100,
+                  }}
+                >
+                  <DescriptionIcon sx={{ color: COLORS.primary, fontSize: 24 }} />
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+                      {formData.informeExistente.fileName}
+                    </Typography>
+                    <Typography variant="caption" color={COLORS.grey600}>
+                      Já cadastrado
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <IconButton
+                      size="small"
+                      onClick={handleViewInformeExistente}
+                      sx={{ color: COLORS.primary }}
+                    >
+                      <VisibilityIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={handleRemoveInformeExistente}
+                      sx={{ color: COLORS.error }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </FileCard>
+              </Stack>
+            )}
+
             {formData.informesAnexados.length > 0 && (
               <Stack spacing={1} mb={2}>
                 {formData.informesAnexados.map((arquivo, index) => (
@@ -225,13 +293,13 @@ export function ModalBanco({
                       bgcolor: COLORS.grey100,
                     }}
                   >
-                    <DescriptionIcon sx={{ color: COLORS.primary, fontSize: 24 }} />
+                    <DescriptionIcon sx={{ color: COLORS.success, fontSize: 24 }} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography variant="body2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
                         {arquivo.name}
                       </Typography>
                       <Typography variant="caption" color={COLORS.grey600}>
-                        {(arquivo.size / 1024 / 1024).toFixed(2)} MB
+                        {(arquivo.size / 1024 / 1024).toFixed(2)} MB • Novo
                       </Typography>
                     </Box>
                     <IconButton
@@ -286,15 +354,17 @@ export function ModalBanco({
       </DialogContent>
       <Divider />
       <DialogActions sx={{ p: 3, pt: 2 }}>
-        <Button onClick={onClose} variant="outlined">
+        <Button onClick={onClose} variant="outlined" disabled={loading}>
           Cancelar
         </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : null}
           sx={{ bgcolor: COLORS.primary, '&:hover': { bgcolor: COLORS.primaryDark } }}
         >
-          {editingId ? 'Salvar Alterações' : 'Cadastrar'}
+          {loading ? (editingId ? 'Salvando...' : 'Cadastrando...') : (editingId ? 'Salvar Alterações' : 'Cadastrar')}
         </Button>
       </DialogActions>
     </Dialog>

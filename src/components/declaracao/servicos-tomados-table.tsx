@@ -9,27 +9,29 @@ import { ActionButtons } from './action-buttons';
 import { useServicosTomados } from 'src/hooks/use-servicos-tomados';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
 import { formatCPFCNPJ, formatCurrency } from 'src/utils/format';
+import { Loading } from 'src/components/loading/loading';
 
 interface ServicosTomadosTableProps {
+  year: number;
   servicosTomados?: ServicoTomado[];
   onServicosTomadosChange?: (servicosTomados: ServicoTomado[]) => void;
 }
 
-export function ServicosTomadosTable({ servicosTomados: servicosTomadosProp, onServicosTomadosChange }: Readonly<ServicosTomadosTableProps>) {
+export function ServicosTomadosTable({ year, servicosTomados: servicosTomadosProp, onServicosTomadosChange }: Readonly<ServicosTomadosTableProps>) {
   const {
     servicosTomados,
     formData,
     setFormData,
     editingId,
-    updateServicosTomados,
+    loading,
     addServicoTomado,
     updateServicoTomado,
     deleteServicoTomado,
     prepareEditForm,
     resetForm,
-  } = useServicosTomados({ initialServicosTomados: servicosTomadosProp, onServicosTomadosChange });
+  } = useServicosTomados({ year, initialServicosTomados: servicosTomadosProp, onServicosTomadosChange });
 
-  const { isOpen, itemToDelete, openModal, closeModal, confirmDelete } = useDeleteModal<ServicoTomado>();
+  const { isOpen, itemToDelete, openModal, closeModal } = useDeleteModal<ServicoTomado>();
   const [modalOpen, setModalOpen] = useState(false);
 
   const handleOpenModal = (servicoTomado?: ServicoTomado) => {
@@ -46,34 +48,38 @@ export function ServicosTomadosTable({ servicosTomados: servicosTomadosProp, onS
     resetForm();
   };
 
-  const handleSubmit = (servicoTomado: ServicoTomado) => {
-    if (editingId) {
-      updateServicoTomado(editingId, servicoTomado);
-      const updatedServicos = servicosTomados.map((s) => (s.id === editingId ? servicoTomado : s));
-      updateServicosTomados(updatedServicos);
-    } else {
-      addServicoTomado(servicoTomado);
-      updateServicosTomados([...servicosTomados, servicoTomado]);
+  const handleSubmit = async (servicoTomado: ServicoTomado) => {
+    try {
+      if (editingId) {
+        await updateServicoTomado(editingId, servicoTomado);
+      } else {
+        await addServicoTomado(servicoTomado);
+      }
+      handleCloseModal();
+    } catch (error) {
+      console.error('Erro ao salvar serviço tomado:', error);
     }
-    handleCloseModal();
   };
 
   const handleOpenDeleteModal = (servicoTomado: ServicoTomado) => {
     openModal(servicoTomado);
   };
 
-  const handleConfirmDelete = () => {
-    confirmDelete((servicoTomado) => {
-      deleteServicoTomado(servicoTomado.id);
-      const updatedServicos = servicosTomados.filter((s) => s.id !== servicoTomado.id);
-      updateServicosTomados(updatedServicos);
-    });
+  const handleConfirmDelete = async () => {
+    try {
+      if (itemToDelete) {
+        await deleteServicoTomado(itemToDelete.id);
+      }
+    } catch (error) {
+      console.error('Erro ao deletar serviço tomado:', error);
+    }
   };
 
 
   return (
     <>
-      <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+      <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 }, position: 'relative' }}>
+        {loading && servicosTomados.length > 0 && <Loading overlay />}
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           justifyContent="space-between"
@@ -93,6 +99,7 @@ export function ServicosTomadosTable({ servicosTomados: servicosTomadosProp, onS
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => handleOpenModal()}
+            disabled={loading}
             sx={{
               bgcolor: COLORS.primary,
               '&:hover': { bgcolor: COLORS.primaryDark },
@@ -138,7 +145,13 @@ export function ServicosTomadosTable({ servicosTomados: servicosTomadosProp, onS
               </TableRow>
             </TableHead>
             <TableBody>
-              {servicosTomados.length === 0 ? (
+              {loading && servicosTomados.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                    <Loading />
+                  </TableCell>
+                </TableRow>
+              ) : servicosTomados.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                     <Typography variant="body2" color={COLORS.grey600}>
@@ -193,6 +206,7 @@ export function ServicosTomadosTable({ servicosTomados: servicosTomadosProp, onS
         formData={formData}
         onFormDataChange={setFormData}
         editingId={editingId}
+        loading={loading}
       />
 
       <ModalDeleteConfirm

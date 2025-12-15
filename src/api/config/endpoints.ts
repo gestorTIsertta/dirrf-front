@@ -1,13 +1,5 @@
-/**
- * Configuração de endpoints da API
- * Organizados por módulo/funcionalidade
- */
-
 const BASE_PATH = '/irpf-declarations';
 
-/**
- * Endpoints de Bancos
- */
 export const banksEndpoints = {
   list: (year: number) => `${BASE_PATH}/${year}/banks`,
   create: (year: number) => `${BASE_PATH}/${year}/banks`,
@@ -16,9 +8,6 @@ export const banksEndpoints = {
   uploadInforme: (year: number, bankId: string) => `${BASE_PATH}/${year}/banks/${bankId}/informe`,
 };
 
-/**
- * Endpoints de Transações
- */
 export const transactionsEndpoints = {
   list: (year: number) => `${BASE_PATH}/${year}/transactions`,
   create: (year: number) => `${BASE_PATH}/${year}/transactions`,
@@ -30,19 +19,35 @@ export const transactionsEndpoints = {
     `${BASE_PATH}/${year}/transactions/${transactionId}/comprovantes`,
 };
 
-/**
- * Endpoints de Documentos
- */
 export const documentsEndpoints = {
   get: () => `${BASE_PATH}/documents/get`,
 };
 
-/**
- * Endpoints de Me (Cliente autenticado)
- */
-export const meEndpoints = {
-  profile: () => '/me',
-  invoices: () => '/me/invoices',
-  irpf: () => '/me/irpf-upload',
+export const dependentsEndpoints = {
+  list: (year: number) => `${BASE_PATH}/${year}/dependents`,
+  create: (year: number) => `${BASE_PATH}/${year}/dependents`,
+  update: (year: number, dependentId: string) => `${BASE_PATH}/${year}/dependents/${dependentId}`,
+  delete: (year: number, dependentId: string) => `${BASE_PATH}/${year}/dependents/${dependentId}`,
 };
+
+export const servicesTakenEndpoints = {
+  list: (year: number) => `${BASE_PATH}/${year}/services-taken`,
+  create: (year: number) => `${BASE_PATH}/${year}/services-taken`,
+  update: (year: number, serviceId: string) => `${BASE_PATH}/${year}/services-taken/${serviceId}`,
+  delete: (year: number, serviceId: string) => `${BASE_PATH}/${year}/services-taken/${serviceId}`,
+  uploadDocuments: (year: number, serviceId: string) =>
+    `${BASE_PATH}/${year}/services-taken/${serviceId}/documents`,
+  deleteDocument: (year: number, serviceId: string) =>
+    `${BASE_PATH}/${year}/services-taken/${serviceId}/documents`,
+};
+
+export const incomeDocumentsEndpoints = {
+  list: (year: number, bankId?: string) => {
+    const base = `${BASE_PATH}/${year}/income-documents`;
+    return bankId ? `${base}?bankId=${bankId}` : base;
+  },
+  upload: (year: number) => `${BASE_PATH}/${year}/income-documents`,
+  remove: (year: number) => `${BASE_PATH}/${year}/income-documents`,
+};
+
 

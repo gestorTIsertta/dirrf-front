@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -15,8 +15,10 @@ import {
   Select,
   MenuItem,
   IconButton,
+  Tooltip,
+  CircularProgress,
 } from '@mui/material';
-import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, Description as DescriptionIcon } from '@mui/icons-material';
+import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, Description as DescriptionIcon, Visibility as VisibilityIcon } from '@mui/icons-material';
 import { ItemDeclarado, FormDataCompraVenda, Banco } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
 import { formatDateFromInput } from 'src/utils/date-format';
@@ -27,7 +29,7 @@ import { CurrencyInputField } from './currency-input';
 interface ModalEditItemProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: ItemDeclarado) => void;
+  onSubmit: (data: ItemDeclarado, comprovantesParaDeletar?: string[], novosComprovantes?: File[]) => void;
   item: ItemDeclarado | null;
   formData: FormDataCompraVenda;
   onFormDataChange: (data: FormDataCompraVenda) => void;
@@ -44,6 +46,14 @@ export function ModalEditItem({
   bancos,
 }: Readonly<ModalEditItemProps>) {
   const comprovanteFileInputRef = useRef<HTMLInputElement>(null);
+  const comprovantesRemovidosRef = useRef<string[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      comprovantesRemovidosRef.current = [];
+    }
+  }, [open]);
 
   const handleComprovanteChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
@@ -64,7 +74,41 @@ export function ModalEditItem({
     onFormDataChange({ ...formData, comprovantesAnexados: novosArquivos });
   };
 
-  const handleSubmit = () => {
+  const handleRemoveComprovanteExistente = (index: number) => {
+    if (formData.comprovantesExistentes) {
+      const comprovanteRemovido = formData.comprovantesExistentes[index];
+      if (comprovanteRemovido) {
+        comprovantesRemovidosRef.current.push(comprovanteRemovido.storagePath);
+      }
+      const novosComprovantes = formData.comprovantesExistentes.filter((_, i) => i !== index);
+      onFormDataChange({ ...formData, comprovantesExistentes: novosComprovantes });
+    }
+  };
+
+  const handleViewComprovanteExistente = async (storagePath: string) => {
+    try {
+      const { getDocument, base64ToBlob } = await import('src/api/requests/documents');
+      const documentData = await getDocument(storagePath);
+      
+      const blob = base64ToBlob(documentData.base64, documentData.mimeType);
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const newWindow = window.open(blobUrl, '_blank');
+      
+      setTimeout(() => {
+        if (newWindow) {
+          URL.revokeObjectURL(blobUrl);
+        } else {
+          URL.revokeObjectURL(blobUrl);
+        }
+      }, 1000);
+    } catch (error) {
+      console.error('Erro ao carregar comprovante:', error);
+      alert('Erro ao carregar o comprovante. Tente novamente.');
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!formData.tipo || !formData.data || !formData.valor || !formData.bancoId) {
       alert('Por favor, preencha todos os campos obrigatórios');
       return;
@@ -77,13 +121,25 @@ export function ModalEditItem({
       tipo: formData.tipo,
       data: formatDateFromInput(formData.data),
       valor: formData.valor,
-      comprovante: formData.comprovantesAnexados.length > 0 ? true : item.comprovante,
-      comprovanteFile: formData.comprovantesAnexados.length > 0 ? formData.comprovantesAnexados[0] : item.comprovanteFile || undefined, // Mantém arquivo anterior ou atualiza
+      comprovante: formData.comprovantesAnexados.length > 0 || (formData.comprovantesExistentes && formData.comprovantesExistentes.length > 0) ? true : item.comprovante,
+      comprovanteFile: formData.comprovantesAnexados.length > 0 ? formData.comprovantesAnexados[0] : item.comprovanteFile || undefined,
       bancoId: formData.bancoId,
     };
 
-    onSubmit(itemAtualizado);
-    onClose();
+    const comprovantesParaDeletar = comprovantesRemovidosRef.current.length > 0 ? [...comprovantesRemovidosRef.current] : undefined;
+    const novosComprovantes = formData.comprovantesAnexados.length > 0 ? [...formData.comprovantesAnexados] : undefined;
+    
+    try {
+      setLoading(true);
+      await onSubmit(itemAtualizado, comprovantesParaDeletar, novosComprovantes);
+      
+      comprovantesRemovidosRef.current = [];
+      onClose();
+    } catch (error) {
+      console.error('Erro ao atualizar item:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -217,14 +273,14 @@ export function ModalEditItem({
 
           <Box>
             <Typography variant="body2" fontWeight={600} mb={1}>
-              Anexar Comprovante (opcional)
+              Comprovantes
             </Typography>
             
-            {formData.comprovantesAnexados.length > 0 && (
+            {formData.comprovantesExistentes && formData.comprovantesExistentes.length > 0 && (
               <Stack spacing={1} mb={2}>
-                {formData.comprovantesAnexados.map((arquivo, index) => (
+                {formData.comprovantesExistentes.map((comprovante, index) => (
                   <Card
-                    key={index}
+                    key={`existente-${index}`}
                     variant="outlined"
                     sx={{
                       p: 1.5,
@@ -237,10 +293,58 @@ export function ModalEditItem({
                     <DescriptionIcon sx={{ color: COLORS.primary, fontSize: 24 }} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography variant="body2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+                        {comprovante.fileName}
+                      </Typography>
+                      <Typography variant="caption" color={COLORS.grey600}>
+                        Já cadastrado
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <Tooltip title="Visualizar">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleViewComprovanteExistente(comprovante.storagePath)}
+                          sx={{ color: COLORS.primary }}
+                        >
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Remover">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleRemoveComprovanteExistente(index)}
+                          sx={{ color: COLORS.error }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Card>
+                ))}
+              </Stack>
+            )}
+
+            {formData.comprovantesAnexados.length > 0 && (
+              <Stack spacing={1} mb={2}>
+                {formData.comprovantesAnexados.map((arquivo, index) => (
+                  <Card
+                    key={`novo-${index}`}
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      bgcolor: COLORS.grey100,
+                    }}
+                  >
+                    <DescriptionIcon sx={{ color: COLORS.success, fontSize: 24 }} />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
                         {arquivo.name}
                       </Typography>
                       <Typography variant="caption" color={COLORS.grey600}>
-                        {(arquivo.size / 1024 / 1024).toFixed(2)} MB
+                        {(arquivo.size / 1024 / 1024).toFixed(2)} MB • Novo
                       </Typography>
                     </Box>
                     <IconButton
@@ -295,15 +399,17 @@ export function ModalEditItem({
       </DialogContent>
       <Divider />
       <DialogActions sx={{ p: 3, pt: 2 }}>
-        <Button onClick={onClose} variant="outlined">
+        <Button onClick={onClose} variant="outlined" disabled={loading}>
           Cancelar
         </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : null}
           sx={{ bgcolor: COLORS.primary, '&:hover': { bgcolor: COLORS.primaryDark } }}
         >
-          Salvar Alterações
+          {loading ? 'Salvando...' : 'Salvar Alterações'}
         </Button>
       </DialogActions>
     </Dialog>

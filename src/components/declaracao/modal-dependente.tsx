@@ -11,6 +11,7 @@ import {
   FormControl,
   Select,
   MenuItem,
+  CircularProgress,
 } from '@mui/material';
 import { FormDataDependente, Dependente } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
@@ -24,6 +25,7 @@ interface ModalDependenteProps {
   formData: FormDataDependente;
   onFormDataChange: (data: FormDataDependente) => void;
   editingId?: string | null;
+  loading?: boolean;
 }
 
 const grausParentesco = [
@@ -58,8 +60,9 @@ export function ModalDependente({
   formData,
   onFormDataChange,
   editingId,
+  loading = false,
 }: Readonly<ModalDependenteProps>) {
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.nomeCompleto || !formData.cpf || !formData.dataNascimento || !formData.grauParentesco) {
       alert('Por favor, preencha todos os campos obrigatórios');
       return;
@@ -82,7 +85,11 @@ export function ModalDependente({
       sexo: formData.sexo ? (formData.sexo as 'Masculino' | 'Feminino' | 'Outro') : undefined,
     };
 
-    onSubmit(novoDependente);
+    try {
+      await onSubmit(novoDependente);
+    } catch (error) {
+      console.error('Erro ao salvar dependente:', error);
+    }
   };
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -205,15 +212,17 @@ export function ModalDependente({
       </DialogContent>
       <Divider />
       <DialogActions sx={{ p: 3, pt: 2 }}>
-        <Button onClick={onClose} variant="outlined">
+        <Button onClick={onClose} variant="outlined" disabled={loading}>
           Cancelar
         </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : null}
           sx={{ bgcolor: COLORS.primary, '&:hover': { bgcolor: COLORS.primaryDark } }}
         >
-          Salvar
+          {loading ? 'Salvando...' : 'Salvar'}
         </Button>
       </DialogActions>
     </Dialog>

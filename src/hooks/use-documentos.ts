@@ -1,17 +1,110 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Documento } from 'src/types/declaracao';
-import { documentosMock } from 'src/constants/declaracao';
+import * as incomeDocumentsApi from 'src/api/requests/income-documents';
+import * as documentsApi from 'src/api/requests/documents';
 
-export function useDocumentos() {
-  const [documentos, setDocumentos] = useState<Documento[]>(documentosMock);
+interface UseDocumentosOptions {
+  year: number;
+}
 
-  const deleteDocumento = (id: number) => {
-    setDocumentos((prev) => prev.filter((d) => d.id !== id));
+export function useDocumentos({ year }: UseDocumentosOptions) {
+  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const formatRelativeDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInDays === 0) return 'Enviado hoje';
+    if (diffInDays === 1) return 'Enviado há 1 dia';
+    if (diffInDays < 7) return `Enviado há ${diffInDays} dias`;
+    if (diffInDays < 30) {
+      const weeks = Math.floor(diffInDays / 7);
+      return `Enviado há ${weeks} ${weeks === 1 ? 'semana' : 'semanas'}`;
+    }
+    const months = Math.floor(diffInDays / 30);
+    return `Enviado há ${months} ${months === 1 ? 'mês' : 'meses'}`;
   };
 
-  const visualizarDocumento = (doc: Documento) => {
-    const url = `#/documento/${doc.id}`;
-    window.open(url, '_blank');
+  const loadDocumentos = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await incomeDocumentsApi.listIncomeDocuments(year);
+      
+      const documentosConvertidos: Documento[] = response.documents.map((doc, index) => ({
+        id: doc.storagePath || `doc-${index}`,
+        nome: doc.fileName,
+        categoria: doc.categoria || 'Outros',
+        tamanho: 'N/A',
+        status: 'Enviado',
+        info: formatRelativeDate(doc.uploadedAt),
+        storagePath: doc.storagePath,
+        uploadedAt: doc.uploadedAt,
+      }));
+      
+      setDocumentos(documentosConvertidos);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar documentos');
+      console.error('Erro ao carregar documentos:', err);
+      setDocumentos([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [year]);
+
+  useEffect(() => {
+    loadDocumentos();
+  }, [loadDocumentos]);
+
+  const deleteDocumento = async (id: number | string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const documento = documentos.find((d) => d.id === id);
+      if (documento?.storagePath) {
+        await incomeDocumentsApi.removeIncomeDocument(year, documento.storagePath);
+        setDocumentos((prev) => prev.filter((d) => d.id !== id));
+      } else {
+        setDocumentos((prev) => prev.filter((d) => d.id !== id));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao deletar documento');
+      console.error('Erro ao deletar documento:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const visualizarDocumento = async (doc: Documento) => {
+    try {
+      if (doc.storagePath) {
+        const documentData = await documentsApi.getDocument(doc.storagePath);
+        const blob = documentsApi.base64ToBlob(documentData.base64, documentData.mimeType);
+        const blobUrl = URL.createObjectURL(blob);
+        
+        const newWindow = window.open(blobUrl, '_blank');
+        
+        setTimeout(() => {
+          if (newWindow) {
+            URL.revokeObjectURL(blobUrl);
+          } else {
+            URL.revokeObjectURL(blobUrl);
+          }
+        }, 1000);
+      } else {
+        const url = `#/documento/${doc.id}`;
+        window.open(url, '_blank');
+      }
+    } catch (error) {
+      console.error('Erro ao visualizar documento:', error);
+      alert('Erro ao carregar o documento. Tente novamente.');
+    }
   };
 
   return {
@@ -19,6 +112,9 @@ export function useDocumentos() {
     setDocumentos,
     deleteDocumento,
     visualizarDocumento,
+    loading,
+    error,
+    reload: loadDocumentos,
   };
 }
 

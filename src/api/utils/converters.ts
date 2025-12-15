@@ -11,9 +11,6 @@ export function convertTipoContaToBackend(
   }
 }
 
-/**
- * Converte tipo de conta do backend para o formato do frontend
- */
 export function convertTipoContaFromBackend(
   tipo: 'corrente' | 'poupanca' | 'salario' | 'investimento' | 'outro'
 ): 'Corrente' | 'Poupança' {
@@ -29,9 +26,6 @@ export function convertTipoContaFromBackend(
   }
 }
 
-/**
- * Converte data do formato brasileiro (DD/MM/YYYY) para ISO datetime string
- */
 export function convertDateToBackend(date: string): string {
   if (!date) return '';
 
@@ -53,9 +47,6 @@ export function convertDateToBackend(date: string): string {
   return date;
 }
 
-/**
- * Converte data do formato ISO datetime string para formato brasileiro (DD/MM/YYYY)
- */
 export function convertDateFromBackend(date: string): string {
   if (!date) return '';
 
@@ -73,9 +64,6 @@ export function convertDateFromBackend(date: string): string {
   }
 }
 
-/**
- * Converte valor do formato brasileiro (R$ 1.000,50) para número
- */
 export function convertValueToBackend(value: string): number {
   if (!value) return 0;
 
@@ -85,9 +73,6 @@ export function convertValueToBackend(value: string): number {
   return isNaN(numValue) ? 0 : numValue;
 }
 
-/**
- * Converte valor de número para formato brasileiro (R$ 1.000,50)
- */
 export function convertValueFromBackend(value: number): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -95,9 +80,6 @@ export function convertValueFromBackend(value: number): string {
   }).format(value);
 }
 
-/**
- * Converte categoria do frontend para o formato do backend
- */
 export function convertCategoriaToBackend(
   categoria: string
 ): 'imovel' | 'veiculo' | 'investimento' | 'acoes' | 'criptomoeda' | 'joia' | 'arte' | 'outro' {
@@ -109,15 +91,15 @@ export function convertCategoriaToBackend(
     'Criptomoedas': 'criptomoeda',
     'Joias': 'joia',
     'Arte': 'arte',
+    'Empréstimos': 'outro',
+    'Participações em Empresas': 'outro',
+    'Atividade Rural': 'outro',
     'Outros': 'outro',
   };
 
   return categoriaMap[categoria] || 'outro';
 }
 
-/**
- * Converte categoria do backend para o formato do frontend
- */
 export function convertCategoriaFromBackend(categoria: string): string {
   const categoriaMap: Record<string, string> = {
     imovel: 'Imóveis',
@@ -133,16 +115,10 @@ export function convertCategoriaFromBackend(categoria: string): string {
   return categoriaMap[categoria] || 'Outros';
 }
 
-/**
- * Converte tipo de operação do frontend para o formato do backend
- */
 export function convertTipoOperacaoToBackend(operacao: 'Compra' | 'Venda'): 'compra' | 'venda' {
   return operacao.toLowerCase() as 'compra' | 'venda';
 }
 
-/**
- * Converte tipo de operação do backend para o formato do frontend
- */
 export function convertTipoOperacaoFromBackend(tipo: 'compra' | 'venda'): 'Compra' | 'Venda' {
   return tipo.charAt(0).toUpperCase() + tipo.slice(1) as 'Compra' | 'Venda';
 }

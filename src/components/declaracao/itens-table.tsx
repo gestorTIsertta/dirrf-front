@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, forwardRef, useImperativeHandle } from 'react';
 import { Box, Card, Stack, Typography, Button, TextField, Table, TableHead, TableRow, TableCell, TableBody, InputAdornment, IconButton, Tooltip } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import Iconify from 'src/components/iconify/iconify';
@@ -13,14 +13,25 @@ import { useItens } from 'src/hooks/use-itens';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
 import { ItemDeclarado, Banco } from 'src/types/declaracao';
 import { formatDate, formatCurrency } from 'src/utils/format';
+import { Loading } from 'src/components/loading/loading';
 
 interface ItensTableProps {
   year: number;
   bancos: Banco[];
 }
 
-export function ItensTable({ year, bancos }: Readonly<ItensTableProps>) {
-  const { itens, formData, setFormData, updateItem, deleteItem, prepareEditForm, resetForm } = useItens({ year });
+export interface ItensTableRef {
+  reload: () => void;
+}
+
+export const ItensTable = forwardRef<ItensTableRef, ItensTableProps>(({ year, bancos }, ref) => {
+  const { itens, formData, setFormData, loading, updateItem, deleteItem, prepareEditForm, resetForm, loadItens } = useItens({ year });
+  
+  useImperativeHandle(ref, () => ({
+    reload: () => {
+      loadItens();
+    },
+  }));
   const { isOpen, itemToDelete, openModal, closeModal, confirmDelete } = useDeleteModal<ItemDeclarado>();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<ItemDeclarado | null>(null);
@@ -39,9 +50,9 @@ export function ItensTable({ year, bancos }: Readonly<ItensTableProps>) {
     resetForm();
   };
 
-  const handleSubmitEdit = async (itemAtualizado: ItemDeclarado) => {
+  const handleSubmitEdit = async (itemAtualizado: ItemDeclarado, comprovantesParaDeletar?: string[], novosComprovantes?: File[]) => {
     try {
-      await updateItem(itemAtualizado);
+      await updateItem(itemAtualizado, comprovantesParaDeletar, novosComprovantes);
       handleCloseEditModal();
     } catch (err) {
       console.error('Erro ao atualizar item:', err);
@@ -73,20 +84,34 @@ export function ItensTable({ year, bancos }: Readonly<ItensTableProps>) {
   };
 
   const getDocumentosItem = () => {
-    if (!itemSelecionado || !itemSelecionado.comprovante || !itemSelecionado.comprovanteFile) {
+    if (!itemSelecionado || !itemSelecionado.comprovante) {
       return [];
     }
-    return [
-      {
-        id: itemSelecionado.id.toString(),
-        nome: itemSelecionado.comprovanteFile.name || `Comprovante - ${itemSelecionado.tipo}`,
-        arquivo: itemSelecionado.comprovanteFile,
-      },
-    ];
+    
+    if (itemSelecionado.comprovantes && itemSelecionado.comprovantes.length > 0) {
+      return itemSelecionado.comprovantes.map((comp, index) => ({
+        id: `${itemSelecionado.id}-${index}`,
+        nome: comp.fileName || `Comprovante - ${itemSelecionado.tipo}`,
+        storagePath: comp.storagePath,
+      }));
+    }
+    
+    if (itemSelecionado.comprovanteFile) {
+      return [
+        {
+          id: itemSelecionado.id.toString(),
+          nome: itemSelecionado.comprovanteFile.name || `Comprovante - ${itemSelecionado.tipo}`,
+          arquivo: itemSelecionado.comprovanteFile,
+        },
+      ];
+    }
+    
+    return [];
   };
 
   return (
-    <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+    <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 }, position: 'relative' }}>
+      {loading && itens.length > 0 && <Loading overlay />}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         justifyContent="space-between"
@@ -100,6 +125,7 @@ export function ItensTable({ year, bancos }: Readonly<ItensTableProps>) {
         <TextField
           size="small"
           placeholder="Buscar itens..."
+          disabled={loading}
           sx={{
             width: { xs: '100%', sm: 220, md: 260 },
             minWidth: { xs: '100%', sm: 220, md: 260 },
@@ -145,7 +171,22 @@ export function ItensTable({ year, bancos }: Readonly<ItensTableProps>) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {itens.map((item) => (
+            {loading && itens.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                  <Loading />
+                </TableCell>
+              </TableRow>
+            ) : itens.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                  <Typography variant="body2" color={COLORS.grey600}>
+                    Nenhum item declarado. Use as categorias acima para adicionar itens.
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              itens.map((item) => (
               <TableRow key={item.id} hover>
                 <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, py: { xs: 1, sm: 1.5 } }}>
                   {item.categoria}
@@ -163,8 +204,8 @@ export function ItensTable({ year, bancos }: Readonly<ItensTableProps>) {
                   {formatCurrency(item.valor)}
                 </TableCell>
                 <TableCell sx={{ py: { xs: 1, sm: 1.5 } }}>
-                  {item.comprovante && item.comprovanteFile ? (
-                    <Tooltip title="Visualizar documento">
+                  {item.comprovante && ((item.comprovantes && item.comprovantes.length > 0) || item.comprovanteFile) ? (
+                    <Tooltip title="Visualizar documentos">
                       <IconButton
                         size="small"
                         onClick={(e) => {
@@ -189,7 +230,8 @@ export function ItensTable({ year, bancos }: Readonly<ItensTableProps>) {
                   <ActionButtons onEdit={() => handleOpenEditModal(item)} onDelete={() => handleOpenDeleteModal(item)} />
                 </TableCell>
               </TableRow>
-            ))}
+            ))
+            )}
           </TableBody>
         </Table>
       </Box>
@@ -247,5 +289,7 @@ export function ItensTable({ year, bancos }: Readonly<ItensTableProps>) {
       />
     </Card>
   );
-}
+});
+
+ItensTable.displayName = 'ItensTable';
 

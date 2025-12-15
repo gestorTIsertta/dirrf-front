@@ -6,16 +6,19 @@ export interface CompraVenda {
   data: string;
   valor: string;
   comprovante?: File | null;
+  comprovantesAnexados?: File[];
   bancoId: string;
 }
 
 export interface Documento {
-  id: number;
+  id: number | string;
   nome: string;
   categoria: string;
   tamanho: string;
   status: string;
   info: string;
+  storagePath?: string;
+  uploadedAt?: string;
 }
 
 export interface ItemDeclarado {
@@ -26,7 +29,12 @@ export interface ItemDeclarado {
   data: string;
   valor: string;
   comprovante: boolean;
-  comprovanteFile?: File | null; // Arquivo do comprovante quando anexado
+  comprovanteFile?: File | null;
+  comprovantes?: Array<{
+    fileName: string;
+    storagePath: string;
+    uploadedAt: string;
+  }>;
   status: string;
   bancoId?: string;
 }
@@ -46,7 +54,12 @@ export interface FormDataCompraVenda {
   valor: string;
   descricao: string;
   comprovante: File | null;
-  comprovantesAnexados: File[]; // Lista de arquivos já anexados
+  comprovantesAnexados: File[];
+  comprovantesExistentes?: Array<{
+    fileName: string;
+    storagePath: string;
+    uploadedAt: string;
+  }>;
   bancoId: string;
 }
 
@@ -85,12 +98,13 @@ export interface Banco {
   agencia: string;
   tipo: 'Corrente' | 'Poupança';
   dataAbertura: string;
-  informeRendimentos?: File | null; // Arquivo em memória (quando anexado no formulário)
+  informeRendimentos?: File | null;
   informeRendimentoMetadata?: {
     fileName: string;
     storagePath: string;
     uploadedAt: string;
-  } | null; // Metadados do arquivo no storage (vem do backend)
+  } | null;
+  informeRemovido?: boolean;
 }
 
 export interface FormDataEmprestimo {
@@ -110,7 +124,7 @@ export interface FormDataAtividadeRural {
   emprestimoRuralValor: string;
   bensAtividadeRural: string;
   fichaSanitaria: File | null;
-  fichasAnexadas: File[]; // Lista de arquivos já anexados
+  fichasAnexadas: File[];
 }
 
 export interface FormDataBanco {
@@ -120,7 +134,13 @@ export interface FormDataBanco {
   tipo: 'Corrente' | 'Poupança';
   dataAbertura: string;
   informeRendimentos: File | null;
-  informesAnexados: File[]; // Lista de arquivos já anexados
+  informesAnexados: File[];
+  informeExistente?: {
+    fileName: string;
+    storagePath: string;
+    uploadedAt: string;
+    file: File;
+  } | null;
 }
 
 export interface Dependente {

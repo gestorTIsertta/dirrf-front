@@ -27,7 +27,3 @@ export function base64ToBlob(base64: string, mimeType: string): Blob {
   return new Blob([byteArray], { type: mimeType });
 }
 
-export function base64ToDataUrl(base64: string, mimeType: string): string {
-  return `data:${mimeType};base64,${base64}`;
-}
-

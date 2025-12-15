@@ -24,7 +24,7 @@ export interface CreateTransactionRequest {
 export interface UpdateTransactionRequest {
   categoria?: TransactionCategory;
   tipo?: TransactionType;
-  data?: string; // ISO datetime string
+  data?: string;
   valor?: number;
   descricao?: string;
   bancoId?: string;
@@ -75,18 +75,11 @@ export interface UploadComprovantesResponse {
   filesUploaded: number;
 }
 
-export interface DeleteComprovanteRequest {
-  storagePath: string;
-}
-
 export interface DeleteComprovanteResponse {
   success: boolean;
   message: string;
 }
 
-/**
- * Lista todas as transações de uma declaração
- */
 export async function listTransactions(year: number): Promise<ListTransactionsResponse> {
   const response = await api.get<ListTransactionsResponse>(transactionsEndpoints.list(year));
   return response.data;
@@ -131,6 +124,7 @@ export async function uploadComprovantes(
   files: File[]
 ): Promise<UploadComprovantesResponse> {
   const formData = new FormData();
+  
   files.forEach((file) => {
     formData.append('file', file);
   });
@@ -139,6 +133,7 @@ export async function uploadComprovantes(
     transactionsEndpoints.uploadComprovantes(year, transactionId),
     formData
   );
+  
   return response.data;
 }
 

@@ -19,6 +19,7 @@ const initialFormData: FormDataBanco = {
   dataAbertura: '',
   informeRendimentos: null,
   informesAnexados: [],
+  informeExistente: null,
 };
 
 interface UseBancosOptions {
@@ -35,7 +36,6 @@ export function useBancos({ year, initialBancos, onBancosChange }: UseBancosOpti
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Carregar bancos do backend
   const loadBancos = useCallback(async () => {
     try {
       setLoading(true);
@@ -61,7 +61,6 @@ export function useBancos({ year, initialBancos, onBancosChange }: UseBancosOpti
     }
   }, [year, onBancosChange]);
 
-  // Carregar bancos quando o ano mudar
   useEffect(() => {
     loadBancos();
   }, [loadBancos]);
@@ -142,6 +141,7 @@ export function useBancos({ year, initialBancos, onBancosChange }: UseBancosOpti
     try {
       setLoading(true);
       setError(null);
+      
       await banksApi.updateBank(year, id, {
         nome: bancoAtualizado.nome,
         conta: bancoAtualizado.conta,
@@ -152,11 +152,16 @@ export function useBancos({ year, initialBancos, onBancosChange }: UseBancosOpti
 
       if (bancoAtualizado.informeRendimentos) {
         await uploadInforme(id, bancoAtualizado.informeRendimentos);
+      } else if (bancoAtualizado.informeRemovido && bancoAtualizado.informeRendimentoMetadata?.storagePath) {
+        try {
+          const { removeIncomeDocument } = await import('src/api/requests/income-documents');
+          await removeIncomeDocument(year, bancoAtualizado.informeRendimentoMetadata.storagePath);
+        } catch (err) {
+          console.error('Erro ao remover informe:', err);
+        }
       }
 
-      const bancosAtualizados = bancos.map((b) => (b.id === id ? bancoAtualizado : b));
-      setBancos(bancosAtualizados);
-      onBancosChange?.(bancosAtualizados);
+      await loadBancos();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao atualizar banco');
       console.error('Erro ao atualizar banco:', err);
@@ -186,7 +191,6 @@ export function useBancos({ year, initialBancos, onBancosChange }: UseBancosOpti
   const uploadInforme = async (bankId: string, file: File) => {
     try {
       await banksApi.uploadInforme(year, bankId, file);
-      // Recarregar bancos para obter o informe atualizado
       await loadBancos();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao fazer upload do informe');
@@ -207,15 +211,39 @@ export function useBancos({ year, initialBancos, onBancosChange }: UseBancosOpti
     }
   };
 
-  const prepareEditForm = (banco: Banco) => {
+  const prepareEditForm = async (banco: Banco) => {
+    let informeExistente = null;
+    let informesAnexados: File[] = [];
+
+    if (banco.informeRendimentoMetadata?.storagePath) {
+      try {
+        const file = await loadInformeRendimento(banco, banco.informeRendimentoMetadata.storagePath);
+        if (file) {
+          informeExistente = {
+            fileName: banco.informeRendimentoMetadata.fileName,
+            storagePath: banco.informeRendimentoMetadata.storagePath,
+            uploadedAt: banco.informeRendimentoMetadata.uploadedAt,
+            file: file,
+          };
+        }
+      } catch (err) {
+        console.error('Erro ao carregar informe existente:', err);
+      }
+    }
+
+    if (banco.informeRendimentos) {
+      informesAnexados = [banco.informeRendimentos];
+    }
+
     setFormData({
       nome: banco.nome,
       conta: banco.conta,
       agencia: banco.agencia,
       tipo: banco.tipo,
       dataAbertura: formatDateToInput(banco.dataAbertura),
-      informeRendimentos: null,
-      informesAnexados: [],
+      informeRendimentos: informeExistente?.file || null,
+      informesAnexados,
+      informeExistente,
     });
     setEditingId(banco.id);
   };

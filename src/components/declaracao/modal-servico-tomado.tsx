@@ -12,6 +12,7 @@ import {
   Select,
   MenuItem,
   Box,
+  CircularProgress,
 } from '@mui/material';
 import { FormDataServicoTomado, ServicoTomado } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
@@ -25,6 +26,7 @@ interface ModalServicoTomadoProps {
   formData: FormDataServicoTomado;
   onFormDataChange: (data: FormDataServicoTomado) => void;
   editingId?: string | null;
+  loading?: boolean;
 }
 
 const tiposServico = [
@@ -55,8 +57,9 @@ export function ModalServicoTomado({
   formData,
   onFormDataChange,
   editingId,
+  loading = false,
 }: Readonly<ModalServicoTomadoProps>) {
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.nomePrestador || !formData.cpfCnpj || !formData.tipoServico || !formData.valorTotal) {
       alert('Por favor, preencha todos os campos obrigatórios');
       return;
@@ -78,7 +81,11 @@ export function ModalServicoTomado({
       observacoes: formData.observacoes || undefined,
     };
 
-    onSubmit(novoServico);
+    try {
+      await onSubmit(novoServico);
+    } catch (error) {
+      console.error('Erro ao salvar serviço tomado:', error);
+    }
   };
 
   const handleCPFCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -208,15 +215,17 @@ export function ModalServicoTomado({
       </DialogContent>
       <Divider />
       <DialogActions sx={{ p: 3, pt: 2 }}>
-        <Button onClick={onClose} variant="outlined">
+        <Button onClick={onClose} variant="outlined" disabled={loading}>
           Cancelar
         </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : null}
           sx={{ bgcolor: COLORS.primary, '&:hover': { bgcolor: COLORS.primaryDark } }}
         >
-          Salvar
+          {loading ? 'Salvando...' : 'Salvar'}
         </Button>
       </DialogActions>
     </Dialog>

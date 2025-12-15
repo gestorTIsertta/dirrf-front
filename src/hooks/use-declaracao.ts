@@ -15,6 +15,7 @@ const initialFormData: FormDataCompraVenda = {
   descricao: '',
   comprovante: null,
   comprovantesAnexados: [],
+  comprovantesExistentes: [],
   bancoId: '',
 };
 

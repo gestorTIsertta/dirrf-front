@@ -1,3 +1,4 @@
+import { forwardRef, useImperativeHandle } from 'react';
 import { Box, Card, Stack, Typography, Button } from '@mui/material';
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 import { COLORS } from 'src/constants/declaracao';
@@ -6,13 +7,25 @@ import { DocumentCard } from './document-card';
 import { useDocumentos } from 'src/hooks/use-documentos';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
 import { Documento } from 'src/types/declaracao';
+import { Loading } from 'src/components/loading/loading';
 
 interface DocumentosListProps {
+  year: number;
   onAnexarClick: () => void;
 }
 
-export function DocumentosList({ onAnexarClick }: DocumentosListProps) {
-  const { documentos, deleteDocumento, visualizarDocumento } = useDocumentos();
+export interface DocumentosListRef {
+  reload: () => void;
+}
+
+export const DocumentosList = forwardRef<DocumentosListRef, DocumentosListProps>(({ year, onAnexarClick }, ref) => {
+  const { documentos, deleteDocumento, visualizarDocumento, loading, reload } = useDocumentos({ year });
+  
+  useImperativeHandle(ref, () => ({
+    reload: () => {
+      reload();
+    },
+  }));
   const { isOpen, itemToDelete, openModal, closeModal, confirmDelete } = useDeleteModal<Documento>();
 
   const handleDelete = (doc: Documento) => {
@@ -26,7 +39,8 @@ export function DocumentosList({ onAnexarClick }: DocumentosListProps) {
   };
 
   return (
-    <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+    <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 }, position: 'relative' }}>
+      {loading && documentos.length > 0 && <Loading overlay />}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         justifyContent="space-between"
@@ -46,6 +60,7 @@ export function DocumentosList({ onAnexarClick }: DocumentosListProps) {
           variant="contained"
           startIcon={<CloudUploadIcon />}
           onClick={onAnexarClick}
+          disabled={loading}
           sx={{
             bgcolor: COLORS.primary,
             '&:hover': { bgcolor: COLORS.primaryDark },
@@ -63,11 +78,17 @@ export function DocumentosList({ onAnexarClick }: DocumentosListProps) {
         </Button>
       </Stack>
 
-      <Stack spacing={1}>
-        {documentos.map((doc) => (
-          <DocumentCard key={doc.id} documento={doc} onView={visualizarDocumento} onDelete={handleDelete} />
-        ))}
-      </Stack>
+      {loading && documentos.length === 0 ? (
+        <Box sx={{ py: 4 }}>
+          <Loading />
+        </Box>
+      ) : (
+        <Stack spacing={1}>
+          {documentos.map((doc) => (
+            <DocumentCard key={doc.id} documento={doc} onView={visualizarDocumento} onDelete={handleDelete} />
+          ))}
+        </Stack>
+      )}
 
       <Box mt={2}>
         <Typography variant="caption" color={COLORS.grey600} sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
@@ -85,5 +106,7 @@ export function DocumentosList({ onAnexarClick }: DocumentosListProps) {
       />
     </Card>
   );
-}
+});
+
+DocumentosList.displayName = 'DocumentosList';
 

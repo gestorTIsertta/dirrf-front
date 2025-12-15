@@ -12,6 +12,7 @@ import { ActionButtons } from './action-buttons';
 import { useBancos } from 'src/hooks/use-bancos';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
 import { formatDate } from 'src/utils/format';
+import { Loading } from 'src/components/loading/loading';
 
 interface BancosTableProps {
   year: number;
@@ -26,6 +27,7 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
     setFormData,
     editingId,
     fileInputRef,
+    loading,
     addBanco,
     updateBanco,
     deleteBanco,
@@ -38,9 +40,9 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
   const [modalDocumentosOpen, setModalDocumentosOpen] = useState(false);
   const [bancoSelecionado, setBancoSelecionado] = useState<Banco | null>(null);
 
-  const handleOpenModal = (banco?: Banco) => {
+  const handleOpenModal = async (banco?: Banco) => {
     if (banco) {
-      prepareEditForm(banco);
+      await prepareEditForm(banco);
     } else {
       resetForm();
     }
@@ -61,7 +63,6 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
       }
       handleCloseModal();
     } catch (err) {
-      // Erro já foi tratado no hook, apenas não fechar o modal se houver erro
       console.error('Erro ao salvar banco:', err);
     }
   };
@@ -95,7 +96,6 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
       return [];
     }
     
-    // Se tiver arquivo em memória (anexado no formulário)
     if (bancoSelecionado.informeRendimentos) {
       return [
         {
@@ -106,7 +106,6 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
       ];
     }
     
-    // Se tiver metadados do arquivo no storage (vem do backend)
     if (bancoSelecionado.informeRendimentoMetadata) {
       return [
         {
@@ -122,7 +121,8 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
 
   return (
     <>
-      <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+      <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 }, position: 'relative' }}>
+        {loading && bancos.length > 0 && <Loading overlay />}
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           justifyContent="space-between"
@@ -137,6 +137,7 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => handleOpenModal()}
+            disabled={loading}
             sx={{
               bgcolor: COLORS.primary,
               '&:hover': { bgcolor: COLORS.primaryDark },
@@ -181,7 +182,22 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
               </TableRow>
             </TableHead>
             <TableBody>
-              {bancos.map((banco) => {
+              {loading && bancos.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                    <Loading />
+                  </TableCell>
+                </TableRow>
+              ) : bancos.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                    <Typography variant="body2" color={COLORS.grey600}>
+                      Nenhum banco cadastrado. Clique em &quot;Cadastrar Banco&quot; para começar.
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                bancos.map((banco) => {
                 let codigoCompe = banco.codigoCompe;
                 if (!codigoCompe && banco.nome) {
                   codigoCompe = getCodigoCompeByNome(banco.nome) || undefined;
@@ -260,7 +276,8 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
                     </TableCell>
                   </TableRow>
                 );
-              })}
+              })
+              )}
             </TableBody>
           </Table>
         </Box>
@@ -274,6 +291,7 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
         onFormDataChange={setFormData}
         editingId={editingId}
         fileInputRef={fileInputRef}
+        loading={loading}
       />
 
       <ModalDeleteConfirm

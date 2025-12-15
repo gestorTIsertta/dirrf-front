@@ -9,27 +9,29 @@ import { ActionButtons } from './action-buttons';
 import { useDependentes } from 'src/hooks/use-dependentes';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
 import { formatCPF, formatDate } from 'src/utils/format';
+import { Loading } from 'src/components/loading/loading';
 
 interface DependentesTableProps {
+  year: number;
   dependentes?: Dependente[];
   onDependentesChange?: (dependentes: Dependente[]) => void;
 }
 
-export function DependentesTable({ dependentes: dependentesProp, onDependentesChange }: Readonly<DependentesTableProps>) {
+export function DependentesTable({ year, dependentes: dependentesProp, onDependentesChange }: Readonly<DependentesTableProps>) {
   const {
     dependentes,
     formData,
     setFormData,
     editingId,
-    updateDependentes,
+    loading,
     addDependente,
     updateDependente,
     deleteDependente,
     prepareEditForm,
     resetForm,
-  } = useDependentes({ initialDependentes: dependentesProp, onDependentesChange });
+  } = useDependentes({ year, initialDependentes: dependentesProp, onDependentesChange });
 
-  const { isOpen, itemToDelete, openModal, closeModal, confirmDelete } = useDeleteModal<Dependente>();
+  const { isOpen, itemToDelete, openModal, closeModal } = useDeleteModal<Dependente>();
   const [modalOpen, setModalOpen] = useState(false);
 
   const handleOpenModal = (dependente?: Dependente) => {
@@ -46,34 +48,38 @@ export function DependentesTable({ dependentes: dependentesProp, onDependentesCh
     resetForm();
   };
 
-  const handleSubmit = (dependente: Dependente) => {
-    if (editingId) {
-      updateDependente(editingId, dependente);
-      const updatedDependentes = dependentes.map((d) => (d.id === editingId ? dependente : d));
-      updateDependentes(updatedDependentes);
-    } else {
-      addDependente(dependente);
-      updateDependentes([...dependentes, dependente]);
+  const handleSubmit = async (dependente: Dependente) => {
+    try {
+      if (editingId) {
+        await updateDependente(editingId, dependente);
+      } else {
+        await addDependente(dependente);
+      }
+      handleCloseModal();
+    } catch (error) {
+      console.error('Erro ao salvar dependente:', error);
     }
-    handleCloseModal();
   };
 
   const handleOpenDeleteModal = (dependente: Dependente) => {
     openModal(dependente);
   };
 
-  const handleConfirmDelete = () => {
-    confirmDelete((dependente) => {
-      deleteDependente(dependente.id);
-      const updatedDependentes = dependentes.filter((d) => d.id !== dependente.id);
-      updateDependentes(updatedDependentes);
-    });
+  const handleConfirmDelete = async () => {
+    try {
+      if (itemToDelete) {
+        await deleteDependente(itemToDelete.id);
+      }
+    } catch (error) {
+      console.error('Erro ao deletar dependente:', error);
+    }
   };
 
 
   return (
     <>
-      <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+      <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 }, position: 'relative' }}>
+        {loading && dependentes.length > 0 && <Loading overlay />}
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           justifyContent="space-between"
@@ -93,6 +99,7 @@ export function DependentesTable({ dependentes: dependentesProp, onDependentesCh
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => handleOpenModal()}
+            disabled={loading}
             sx={{
               bgcolor: COLORS.primary,
               '&:hover': { bgcolor: COLORS.primaryDark },
@@ -141,7 +148,13 @@ export function DependentesTable({ dependentes: dependentesProp, onDependentesCh
               </TableRow>
             </TableHead>
             <TableBody>
-              {dependentes.length === 0 ? (
+              {loading && dependentes.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                    <Loading />
+                  </TableCell>
+                </TableRow>
+              ) : dependentes.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                     <Typography variant="body2" color={COLORS.grey600}>
@@ -191,6 +204,7 @@ export function DependentesTable({ dependentes: dependentesProp, onDependentesCh
         formData={formData}
         onFormDataChange={setFormData}
         editingId={editingId}
+        loading={loading}
       />
 
       <ModalDeleteConfirm

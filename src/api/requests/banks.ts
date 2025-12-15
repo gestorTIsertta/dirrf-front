@@ -13,7 +13,7 @@ export interface UpdateBankRequest {
   conta?: string;
   agencia?: string;
   tipoConta?: 'corrente' | 'poupanca' | 'salario' | 'investimento' | 'outro';
-  dataAbertura?: string; // ISO datetime string
+  dataAbertura?: string;
 }
 
 export interface BankResponse {

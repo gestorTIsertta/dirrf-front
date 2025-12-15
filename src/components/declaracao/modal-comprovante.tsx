@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useState, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -13,6 +13,7 @@ import {
   Box,
   Card,
   Typography,
+  CircularProgress,
 } from '@mui/material';
 import { CloudUpload as CloudUploadIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 import { Banco, ComprovanteData } from 'src/types/declaracao';
@@ -26,6 +27,7 @@ interface ModalComprovanteProps {
   bancos: Banco[];
   comprovanteData: ComprovanteData;
   onComprovanteDataChange: (data: ComprovanteData) => void;
+  loading?: boolean;
 }
 
 export function ModalComprovante({
@@ -35,23 +37,34 @@ export function ModalComprovante({
   bancos,
   comprovanteData,
   onComprovanteDataChange,
+  loading = false,
 }: ModalComprovanteProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [localLoading, setLocalLoading] = useState(false);
 
   const handleComprovanteFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
     onComprovanteDataChange({ ...comprovanteData, arquivo: file });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!comprovanteData.bancoId || !comprovanteData.arquivo) {
       alert('Por favor, selecione um banco e anexe o comprovante');
       return;
     }
 
-    onSubmit(comprovanteData.bancoId, comprovanteData.arquivo);
-    onClose();
+    try {
+      setLocalLoading(true);
+      await onSubmit(comprovanteData.bancoId, comprovanteData.arquivo);
+      onClose();
+    } catch (error) {
+      console.error('Erro ao anexar comprovante:', error);
+    } finally {
+      setLocalLoading(false);
+    }
   };
+
+  const isLoading = loading || localLoading;
 
   return (
     <Dialog
@@ -85,6 +98,7 @@ export function ModalComprovante({
               value={comprovanteData.bancoId}
               onChange={(e) => onComprovanteDataChange({ ...comprovanteData, bancoId: e.target.value })}
               displayEmpty
+              disabled={isLoading}
             >
               <MenuItem value="" disabled>
                 Selecione um banco
@@ -147,6 +161,7 @@ export function ModalComprovante({
             />
             <Card
               variant="outlined"
+              onClick={() => !isLoading && fileInputRef.current?.click()}
               sx={{
                 borderStyle: 'dashed',
                 borderColor: COLORS.grey200,
@@ -154,14 +169,14 @@ export function ModalComprovante({
                 bgcolor: COLORS.grey100,
                 textAlign: 'center',
                 p: 2,
-                cursor: 'pointer',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
                 transition: 'all 0.3s',
+                opacity: isLoading ? 0.6 : 1,
                 '&:hover': {
-                  borderColor: COLORS.primary,
-                  bgcolor: '#F3F4FF',
+                  borderColor: isLoading ? COLORS.grey200 : COLORS.primary,
+                  bgcolor: isLoading ? COLORS.grey100 : '#F3F4FF',
                 },
               }}
-              onClick={() => fileInputRef.current?.click()}
             >
               {comprovanteData.arquivo ? (
                 <Stack spacing={1} alignItems="center">
@@ -197,16 +212,17 @@ export function ModalComprovante({
       </DialogContent>
       <Divider />
       <DialogActions sx={{ p: 3, pt: 2 }}>
-        <Button onClick={onClose} variant="outlined">
+        <Button onClick={onClose} variant="outlined" disabled={isLoading}>
           Cancelar
         </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={!comprovanteData.bancoId || !comprovanteData.arquivo}
+          disabled={!comprovanteData.bancoId || !comprovanteData.arquivo || isLoading}
+          startIcon={isLoading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : null}
           sx={{ bgcolor: COLORS.primary, '&:hover': { bgcolor: COLORS.primaryDark } }}
         >
-          Anexar
+          {isLoading ? 'Anexando...' : 'Anexar'}
         </Button>
       </DialogActions>
     </Dialog>

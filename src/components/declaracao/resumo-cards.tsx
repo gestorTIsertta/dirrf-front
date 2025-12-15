@@ -1,9 +1,54 @@
+import { useState, useEffect } from 'react';
 import { Grid, Card, Stack, Typography, Chip, Box } from '@mui/material';
 import { CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 import Iconify from 'src/components/iconify/iconify';
 import { COLORS } from 'src/constants/declaracao';
+import { getSummary, SummaryResponse } from 'src/api/requests/summary';
+import { Loading } from 'src/components/loading/loading';
+import { formatCurrency } from 'src/utils/format';
 
-export function ResumoCards() {
+interface ResumoCardsProps {
+  year: number;
+}
+
+export function ResumoCards({ year }: ResumoCardsProps) {
+  const [summary, setSummary] = useState<SummaryResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadSummary = async () => {
+      try {
+        setLoading(true);
+        const data = await getSummary(year);
+        setSummary(data);
+      } catch (err) {
+        console.error('Erro ao carregar resumo:', err);
+        setSummary({
+          rendimentos: { tributaveis: 0, isentos: 0, exclusivos: 0 },
+          bensEDireitos: { valorTotal: 0, itensDeclarados: 0 },
+          dividasEOnus: { totalDividas: 0, obrigacoes: 0 },
+          restituicao: { valor: 0 },
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSummary();
+  }, [year]);
+
+  if (loading) {
+    return (
+      <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+        <Loading />
+      </Card>
+    );
+  }
+
+  const rendimentos = summary?.rendimentos || { tributaveis: 0, isentos: 0, exclusivos: 0, variacaoPercentual: 0 };
+  const bensEDireitos = summary?.bensEDireitos || { valorTotal: 0, itensDeclarados: 0, variacaoPercentual: 0 };
+  const dividasEOnus = summary?.dividasEOnus || { totalDividas: 0, obrigacoes: 0, variacaoPercentual: 0 };
+  const restituicao = summary?.restituicao || { valor: 0, previsao: 'A calcular' };
   return (
     <Card sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
       <Typography variant="h6" fontWeight={700} mb={2} sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
@@ -31,12 +76,22 @@ export function ResumoCards() {
                 <Typography variant="body2" color={COLORS.grey600} mb={0.5}>
                   Rendimentos
                 </Typography>
-                <Stack direction="row" spacing={0.5} alignItems="center">
-                  <Iconify icon="eva:arrow-upward-fill" width={16} sx={{ color: COLORS.success }} />
-                  <Typography variant="caption" color={COLORS.success} fontWeight={600}>
-                    12.5%
-                  </Typography>
-                </Stack>
+                {rendimentos.variacaoPercentual !== undefined && rendimentos.variacaoPercentual !== 0 && (
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    <Iconify 
+                      icon={rendimentos.variacaoPercentual > 0 ? "eva:arrow-upward-fill" : "eva:arrow-downward-fill"} 
+                      width={16} 
+                      sx={{ color: rendimentos.variacaoPercentual > 0 ? COLORS.success : COLORS.error }} 
+                    />
+                    <Typography 
+                      variant="caption" 
+                      color={rendimentos.variacaoPercentual > 0 ? COLORS.success : COLORS.error} 
+                      fontWeight={600}
+                    >
+                      {Math.abs(rendimentos.variacaoPercentual).toFixed(1)}%
+                    </Typography>
+                  </Stack>
+                )}
               </Box>
             </Stack>
             <Stack spacing={1.5}>
@@ -45,7 +100,7 @@ export function ResumoCards() {
                   Tributáveis
                 </Typography>
                 <Typography fontWeight={700} variant="body2">
-                  R$ 185.420,00
+                  {formatCurrency(rendimentos.tributaveis)}
                 </Typography>
               </Box>
               <Box>
@@ -53,7 +108,7 @@ export function ResumoCards() {
                   Isentos
                 </Typography>
                 <Typography fontWeight={700} variant="body2">
-                  R$ 24.800,00
+                  {formatCurrency(rendimentos.isentos)}
                 </Typography>
               </Box>
               <Box>
@@ -61,7 +116,7 @@ export function ResumoCards() {
                   Exclusivos
                 </Typography>
                 <Typography fontWeight={700} variant="body2">
-                  R$ 12.350,00
+                  {formatCurrency(rendimentos.exclusivos)}
                 </Typography>
               </Box>
             </Stack>
@@ -89,12 +144,22 @@ export function ResumoCards() {
                 <Typography variant="body2" color={COLORS.grey600} mb={0.5}>
                   Bens e Direitos
                 </Typography>
-                <Stack direction="row" spacing={0.5} alignItems="center">
-                  <Iconify icon="eva:arrow-upward-fill" width={16} sx={{ color: COLORS.success }} />
-                  <Typography variant="caption" color={COLORS.success} fontWeight={600}>
-                    8.2%
-                  </Typography>
-                </Stack>
+                {bensEDireitos.variacaoPercentual !== undefined && bensEDireitos.variacaoPercentual !== 0 && (
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    <Iconify 
+                      icon={bensEDireitos.variacaoPercentual > 0 ? "eva:arrow-upward-fill" : "eva:arrow-downward-fill"} 
+                      width={16} 
+                      sx={{ color: bensEDireitos.variacaoPercentual > 0 ? COLORS.success : COLORS.error }} 
+                    />
+                    <Typography 
+                      variant="caption" 
+                      color={bensEDireitos.variacaoPercentual > 0 ? COLORS.success : COLORS.error} 
+                      fontWeight={600}
+                    >
+                      {Math.abs(bensEDireitos.variacaoPercentual).toFixed(1)}%
+                    </Typography>
+                  </Stack>
+                )}
               </Box>
             </Stack>
             <Stack spacing={1.5}>
@@ -103,7 +168,7 @@ export function ResumoCards() {
                   Valor total
                 </Typography>
                 <Typography fontWeight={700} variant="body2">
-                  R$ 845.200,00
+                  {formatCurrency(bensEDireitos.valorTotal)}
                 </Typography>
               </Box>
               <Box>
@@ -116,7 +181,7 @@ export function ResumoCards() {
                   fontWeight={600}
                   sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
                 >
-                  18 itens
+                  {bensEDireitos.itensDeclarados} {bensEDireitos.itensDeclarados === 1 ? 'item' : 'itens'}
                 </Typography>
               </Box>
             </Stack>
@@ -144,12 +209,22 @@ export function ResumoCards() {
                 <Typography variant="body2" color={COLORS.grey600} mb={0.5}>
                   Dívidas e Ônus
                 </Typography>
-                <Stack direction="row" spacing={0.5} alignItems="center">
-                  <Iconify icon="eva:arrow-upward-fill" width={16} sx={{ color: COLORS.error }} />
-                  <Typography variant="caption" color={COLORS.error} fontWeight={600}>
-                    15.3%
-                  </Typography>
-                </Stack>
+                {dividasEOnus.variacaoPercentual !== undefined && dividasEOnus.variacaoPercentual !== 0 && (
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    <Iconify 
+                      icon={dividasEOnus.variacaoPercentual > 0 ? "eva:arrow-upward-fill" : "eva:arrow-downward-fill"} 
+                      width={16} 
+                      sx={{ color: dividasEOnus.variacaoPercentual > 0 ? COLORS.error : COLORS.success }} 
+                    />
+                    <Typography 
+                      variant="caption" 
+                      color={dividasEOnus.variacaoPercentual > 0 ? COLORS.error : COLORS.success} 
+                      fontWeight={600}
+                    >
+                      {Math.abs(dividasEOnus.variacaoPercentual).toFixed(1)}%
+                    </Typography>
+                  </Stack>
+                )}
               </Box>
             </Stack>
             <Stack spacing={1.5}>
@@ -158,7 +233,7 @@ export function ResumoCards() {
                   Total em dívidas
                 </Typography>
                 <Typography fontWeight={700} variant="body2">
-                  R$ 125.800,00
+                  {formatCurrency(dividasEOnus.totalDividas)}
                 </Typography>
               </Box>
               <Box>
@@ -171,7 +246,7 @@ export function ResumoCards() {
                   fontWeight={600}
                   sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
                 >
-                  5 itens
+                  {dividasEOnus.obrigacoes} {dividasEOnus.obrigacoes === 1 ? 'item' : 'itens'}
                 </Typography>
               </Box>
             </Stack>
@@ -203,12 +278,14 @@ export function ResumoCards() {
                   Restituição a receber
                 </Typography>
                 <Typography fontWeight={700} color={COLORS.success} fontSize={24}>
-                  R$ 4.825,00
+                  {formatCurrency(restituicao.valor)}
                 </Typography>
               </Box>
-              <Typography variant="caption" color={COLORS.grey600}>
-                Previsão: 3º lote (Julho/2024)
-              </Typography>
+              {restituicao.previsao && (
+                <Typography variant="caption" color={COLORS.grey600}>
+                  Previsão: {restituicao.previsao}
+                </Typography>
+              )}
             </Stack>
           </Card>
         </Grid>

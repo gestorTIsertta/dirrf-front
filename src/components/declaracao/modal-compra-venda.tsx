@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useState, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -15,6 +15,7 @@ import {
   Select,
   MenuItem,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, Description as DescriptionIcon } from '@mui/icons-material';
 import { FormDataCompraVenda, CompraVenda, Banco } from 'src/types/declaracao';
@@ -45,6 +46,7 @@ export function ModalCompraVenda({
   bancos,
 }: Readonly<ModalCompraVendaProps>) {
   const comprovanteFileInputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleComprovanteChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
@@ -65,8 +67,8 @@ export function ModalCompraVenda({
     onFormDataChange({ ...formData, comprovantesAnexados: novosArquivos });
   };
 
-  const handleSubmit = () => {
-    if (!formData.tipo || !formData.data || !formData.valor || !formData.bancoId) {
+  const handleSubmit = async () => {
+    if (!formData.tipo || !formData.data || !formData.valor) {
       alert('Por favor, preencha todos os campos obrigatórios');
       return;
     }
@@ -79,11 +81,19 @@ export function ModalCompraVenda({
       data: formData.data,
       valor: formData.valor,
       comprovante: formData.comprovantesAnexados.length > 0 ? formData.comprovantesAnexados[0] : null,
+      comprovantesAnexados: formData.comprovantesAnexados,
       bancoId: formData.bancoId,
     };
 
-    onSubmit(novaCompraVenda);
-    onClose();
+    try {
+      setLoading(true);
+      await onSubmit(novaCompraVenda);
+      onClose();
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -144,7 +154,7 @@ export function ModalCompraVenda({
             rows={3}
           />
 
-          <FormControl fullWidth required>
+          <FormControl fullWidth>
             <Typography variant="body2" fontWeight={600} mb={1}>
               Banco
             </Typography>
@@ -281,15 +291,17 @@ export function ModalCompraVenda({
       </DialogContent>
       <Divider />
       <DialogActions sx={{ p: 3, pt: 2 }}>
-        <Button onClick={onClose} variant="outlined">
+        <Button onClick={onClose} variant="outlined" disabled={loading}>
           Cancelar
         </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : null}
           sx={{ bgcolor: COLORS.primary, '&:hover': { bgcolor: COLORS.primaryDark } }}
         >
-          Salvar
+          {loading ? 'Salvando...' : 'Salvar'}
         </Button>
       </DialogActions>
     </Dialog>

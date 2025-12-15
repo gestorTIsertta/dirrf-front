@@ -15,8 +15,8 @@ import { COLORS } from 'src/constants/declaracao';
 interface DocumentoAnexado {
   id: string;
   nome: string;
-  arquivo?: File | string; // File para novos uploads, string para URLs
-  storagePath?: string; // Caminho no storage (para carregar do backend)
+  arquivo?: File | string;
+  storagePath?: string;
 }
 
 interface ModalDocumentosProps {
@@ -28,13 +28,23 @@ interface ModalDocumentosProps {
 
 export function ModalDocumentos({ open, onClose, documentos, titulo = 'Documentos Anexados' }: Readonly<ModalDocumentosProps>) {
   const handleOpenDocument = async (documento: DocumentoAnexado) => {
-    // Se tiver storagePath, carregar do backend
     if (documento.storagePath) {
       try {
-        const { getDocument, base64ToDataUrl } = await import('src/api/requests/documents');
+        const { getDocument, base64ToBlob } = await import('src/api/requests/documents');
         const documentData = await getDocument(documento.storagePath);
-        const dataUrl = base64ToDataUrl(documentData.base64, documentData.mimeType);
-        window.open(dataUrl, '_blank');
+        
+        const blob = base64ToBlob(documentData.base64, documentData.mimeType);
+        const blobUrl = URL.createObjectURL(blob);
+        
+        const newWindow = window.open(blobUrl, '_blank');
+        
+        setTimeout(() => {
+          if (newWindow) {
+            URL.revokeObjectURL(blobUrl);
+          } else {
+            URL.revokeObjectURL(blobUrl);
+          }
+        }, 1000);
       } catch (error) {
         console.error('Erro ao carregar documento:', error);
         alert('Erro ao carregar o documento. Tente novamente.');
@@ -42,14 +52,19 @@ export function ModalDocumentos({ open, onClose, documentos, titulo = 'Documento
       return;
     }
     
-    // Se tiver arquivo em memória
     if (documento.arquivo) {
       if (typeof documento.arquivo === 'string') {
         window.open(documento.arquivo, '_blank');
       } else {
         const url = URL.createObjectURL(documento.arquivo);
-        window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 100);
+        const newWindow = window.open(url, '_blank');
+        setTimeout(() => {
+          if (newWindow) {
+            URL.revokeObjectURL(url);
+          } else {
+            URL.revokeObjectURL(url);
+          }
+        }, 1000);
       }
     }
   };

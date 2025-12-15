@@ -27,7 +27,6 @@ interface UseItensOptions {
   year: number;
 }
 
-// Mapa para armazenar a relação entre ID do frontend e transactionId do backend
 const transactionIdMap = new Map<number, string>();
 
 export function useItens({ year }: UseItensOptions) {
@@ -36,17 +35,16 @@ export function useItens({ year }: UseItensOptions) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Carregar transações do backend
   const loadItens = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await transactionsApi.listTransactions(year);
-      transactionIdMap.clear(); // Limpar mapa ao recarregar
+      transactionIdMap.clear();
       
       const itensConvertidos: ItemDeclarado[] = response.transactions.map((transaction, index) => {
         const frontendId = index + 1;
-        transactionIdMap.set(frontendId, transaction.id); // Mapear ID frontend -> backend
+        transactionIdMap.set(frontendId, transaction.id);
         
         return {
           id: frontendId,
@@ -56,8 +54,9 @@ export function useItens({ year }: UseItensOptions) {
           data: convertDateFromBackend(transaction.data),
           valor: convertValueFromBackend(transaction.valor),
           comprovante: transaction.comprovantes.length > 0,
-          comprovanteFile: null, // Será carregado sob demanda quando necessário
-          status: 'Pendente', // Status padrão (pode ser melhorado com lógica de negócio)
+          comprovanteFile: null,
+          comprovantes: transaction.comprovantes,
+          status: 'Pendente',
           bancoId: transaction.bancoId,
         };
       });
@@ -70,17 +69,15 @@ export function useItens({ year }: UseItensOptions) {
     }
   }, [year]);
 
-  // Carregar itens quando o ano mudar
   useEffect(() => {
     loadItens();
   }, [loadItens]);
 
-  const updateItem = async (itemAtualizado: ItemDeclarado) => {
+  const updateItem = async (itemAtualizado: ItemDeclarado, comprovantesParaDeletar?: string[], novosComprovantes?: File[]) => {
     try {
       setLoading(true);
       setError(null);
       
-      // Obter transactionId do mapa
       const transactionId = transactionIdMap.get(itemAtualizado.id);
       if (!transactionId) {
         throw new Error('Item não encontrado');
@@ -95,12 +92,18 @@ export function useItens({ year }: UseItensOptions) {
         bancoId: itemAtualizado.bancoId || undefined,
       });
 
-      // Se houver novos comprovantes, fazer upload
-      if (itemAtualizado.comprovanteFile) {
-        await transactionsApi.uploadComprovantes(year, transactionId, [itemAtualizado.comprovanteFile]);
+      if (comprovantesParaDeletar && comprovantesParaDeletar.length > 0) {
+        await Promise.all(
+          comprovantesParaDeletar.map((storagePath) =>
+            transactionsApi.deleteComprovante(year, transactionId, storagePath)
+          )
+        );
       }
 
-      // Recarregar itens
+      if (novosComprovantes && novosComprovantes.length > 0) {
+        await transactionsApi.uploadComprovantes(year, transactionId, novosComprovantes);
+      }
+
       await loadItens();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao atualizar item');
@@ -116,7 +119,6 @@ export function useItens({ year }: UseItensOptions) {
       setLoading(true);
       setError(null);
       
-      // Obter transactionId do mapa
       const transactionId = transactionIdMap.get(id);
       if (!transactionId) {
         throw new Error('Item não encontrado');
@@ -134,6 +136,14 @@ export function useItens({ year }: UseItensOptions) {
   };
 
   const prepareEditForm = (item: ItemDeclarado) => {
+    const comprovantesExistentes = item.comprovantes && item.comprovantes.length > 0 
+      ? item.comprovantes.map(comp => ({
+          fileName: comp.fileName,
+          storagePath: comp.storagePath,
+          uploadedAt: comp.uploadedAt,
+        }))
+      : [];
+    
     setFormData({
       tipo: item.tipo,
       data: formatDateToInput(item.data),
@@ -141,6 +151,7 @@ export function useItens({ year }: UseItensOptions) {
       descricao: '',
       comprovante: null,
       comprovantesAnexados: item.comprovanteFile ? [item.comprovanteFile] : [],
+      comprovantesExistentes,
       bancoId: item.bancoId || '',
     });
   };
