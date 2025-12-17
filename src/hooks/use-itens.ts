@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ItemDeclarado, FormDataCompraVenda } from 'src/types/declaracao';
 import * as transactionsApi from 'src/api/requests/transactions';
 import {
@@ -12,6 +13,7 @@ import {
   convertValueFromBackend,
 } from 'src/api/utils/converters';
 import { formatDateToInput } from 'src/utils/date-format';
+import { useClientCpf } from 'src/hooks/use-contador-context';
 
 const initialFormData: FormDataCompraVenda = {
   tipo: '',
@@ -34,12 +36,26 @@ export function useItens({ year }: UseItensOptions) {
   const [formData, setFormData] = useState<FormDataCompraVenda>(initialFormData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const clientCpf = useClientCpf();
+  const location = useLocation();
 
   const loadItens = useCallback(async () => {
+    const currentCpf = clientCpf;
+    
     try {
       setLoading(true);
       setError(null);
-      const response = await transactionsApi.listTransactions(year);
+      
+      if (currentCpf !== clientCpf) {
+        return;
+      }
+      
+      const response = await transactionsApi.listTransactions(year, currentCpf);
+      
+      if (currentCpf !== clientCpf) {
+        return;
+      }
+      
       transactionIdMap.clear();
       
       const itensConvertidos: ItemDeclarado[] = response.transactions.map((transaction, index) => {
@@ -62,16 +78,28 @@ export function useItens({ year }: UseItensOptions) {
       });
       setItens(itensConvertidos);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar itens');
-      console.error('Erro ao carregar itens:', err);
+      if (currentCpf === clientCpf) {
+        setError(err instanceof Error ? err.message : 'Erro ao carregar itens');
+      }
     } finally {
-      setLoading(false);
+      if (currentCpf === clientCpf) {
+        setLoading(false);
+      }
     }
-  }, [year]);
+  }, [year, clientCpf]);
 
   useEffect(() => {
+    if (location.pathname === '/declaracao') {
+      const searchParams = new URLSearchParams(location.search);
+      const cpfFromQuery = searchParams.get('cpf');
+      
+      if (cpfFromQuery && !clientCpf) {
+        return;
+      }
+    }
+    
     loadItens();
-  }, [loadItens]);
+  }, [loadItens, clientCpf, location.pathname, location.search]);
 
   const updateItem = async (itemAtualizado: ItemDeclarado, comprovantesParaDeletar?: string[], novosComprovantes?: File[]) => {
     try {
@@ -90,18 +118,18 @@ export function useItens({ year }: UseItensOptions) {
         valor: convertValueToBackend(itemAtualizado.valor),
         descricao: itemAtualizado.tipo,
         bancoId: itemAtualizado.bancoId || undefined,
-      });
+      }, clientCpf);
 
       if (comprovantesParaDeletar && comprovantesParaDeletar.length > 0) {
         await Promise.all(
           comprovantesParaDeletar.map((storagePath) =>
-            transactionsApi.deleteComprovante(year, transactionId, storagePath)
+            transactionsApi.deleteComprovante(year, transactionId, storagePath, clientCpf)
           )
         );
       }
 
       if (novosComprovantes && novosComprovantes.length > 0) {
-        await transactionsApi.uploadComprovantes(year, transactionId, novosComprovantes);
+        await transactionsApi.uploadComprovantes(year, transactionId, novosComprovantes, clientCpf);
       }
 
       await loadItens();
@@ -124,7 +152,7 @@ export function useItens({ year }: UseItensOptions) {
         throw new Error('Item não encontrado');
       }
       
-      await transactionsApi.deleteTransaction(year, transactionId);
+      await transactionsApi.deleteTransaction(year, transactionId, clientCpf);
       await loadItens();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao deletar item');

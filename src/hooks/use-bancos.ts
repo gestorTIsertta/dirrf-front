@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Banco, FormDataBanco } from 'src/types/declaracao';
 import { getCodigoCompeByNome } from 'src/constants/bancos';
 import * as banksApi from 'src/api/requests/banks';
@@ -10,6 +11,7 @@ import {
 } from 'src/api/utils/converters';
 import { getDocument, base64ToBlob } from 'src/api/requests/documents';
 import { formatDateToInput } from 'src/utils/date-format';
+import { useClientCpf } from 'src/hooks/use-contador-context';
 
 const initialFormData: FormDataBanco = {
   nome: '',
@@ -35,12 +37,26 @@ export function useBancos({ year, initialBancos, onBancosChange }: UseBancosOpti
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const clientCpf = useClientCpf();
+  const location = useLocation();
 
   const loadBancos = useCallback(async () => {
+    const currentCpf = clientCpf;
+    
     try {
       setLoading(true);
       setError(null);
-      const response = await banksApi.listBanks(year);
+      
+      if (currentCpf !== clientCpf) {
+        return;
+      }
+      
+      const response = await banksApi.listBanks(year, currentCpf);
+      
+      if (currentCpf !== clientCpf) {
+        return;
+      }
+      
       const bancosConvertidos: Banco[] = response.banks.map((bank) => ({
         id: bank.id,
         nome: bank.nome,
@@ -54,16 +70,28 @@ export function useBancos({ year, initialBancos, onBancosChange }: UseBancosOpti
       setBancos(bancosConvertidos);
       onBancosChange?.(bancosConvertidos);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar bancos');
-      console.error('Erro ao carregar bancos:', err);
+      if (currentCpf === clientCpf) {
+        setError(err instanceof Error ? err.message : 'Erro ao carregar bancos');
+      }
     } finally {
-      setLoading(false);
+      if (currentCpf === clientCpf) {
+        setLoading(false);
+      }
     }
-  }, [year, onBancosChange]);
+  }, [year, clientCpf, onBancosChange]);
 
   useEffect(() => {
+    if (location.pathname === '/declaracao') {
+      const searchParams = new URLSearchParams(location.search);
+      const cpfFromQuery = searchParams.get('cpf');
+      
+      if (cpfFromQuery && !clientCpf) {
+        return;
+      }
+    }
+    
     loadBancos();
-  }, [loadBancos]);
+  }, [loadBancos, clientCpf, location.pathname, location.search]);
 
   useEffect(() => {
     if (initialBancos) {
@@ -109,7 +137,7 @@ export function useBancos({ year, initialBancos, onBancosChange }: UseBancosOpti
         agencia: banco.agencia,
         tipoConta: convertTipoContaToBackend(banco.tipo),
         dataAbertura: convertDateToBackend(banco.dataAbertura),
-      });
+      }, clientCpf);
 
       const novoBanco: Banco = {
         id: response.bank.id,
@@ -148,14 +176,14 @@ export function useBancos({ year, initialBancos, onBancosChange }: UseBancosOpti
         agencia: bancoAtualizado.agencia,
         tipoConta: convertTipoContaToBackend(bancoAtualizado.tipo),
         dataAbertura: convertDateToBackend(bancoAtualizado.dataAbertura),
-      });
+      }, clientCpf);
 
       if (bancoAtualizado.informeRendimentos) {
         await uploadInforme(id, bancoAtualizado.informeRendimentos);
       } else if (bancoAtualizado.informeRemovido && bancoAtualizado.informeRendimentoMetadata?.storagePath) {
         try {
           const { removeIncomeDocument } = await import('src/api/requests/income-documents');
-          await removeIncomeDocument(year, bancoAtualizado.informeRendimentoMetadata.storagePath);
+          await removeIncomeDocument(year, bancoAtualizado.informeRendimentoMetadata.storagePath, clientCpf);
         } catch (err) {
           console.error('Erro ao remover informe:', err);
         }
@@ -175,7 +203,7 @@ export function useBancos({ year, initialBancos, onBancosChange }: UseBancosOpti
     try {
       setLoading(true);
       setError(null);
-      await banksApi.deleteBank(year, id);
+      await banksApi.deleteBank(year, id, clientCpf);
       const bancosAtualizados = bancos.filter((b) => b.id !== id);
       setBancos(bancosAtualizados);
       onBancosChange?.(bancosAtualizados);
@@ -190,7 +218,7 @@ export function useBancos({ year, initialBancos, onBancosChange }: UseBancosOpti
 
   const uploadInforme = async (bankId: string, file: File) => {
     try {
-      await banksApi.uploadInforme(year, bankId, file);
+      await banksApi.uploadInforme(year, bankId, file, clientCpf);
       await loadBancos();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao fazer upload do informe');

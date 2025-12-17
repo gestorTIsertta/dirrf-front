@@ -80,48 +80,67 @@ export interface DeleteComprovanteResponse {
   message: string;
 }
 
-export async function listTransactions(year: number): Promise<ListTransactionsResponse> {
-  const response = await api.get<ListTransactionsResponse>(transactionsEndpoints.list(year));
+export async function listTransactions(
+  year: number,
+  cpf?: string | null
+): Promise<ListTransactionsResponse> {
+  let url = transactionsEndpoints.list(year);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.get<ListTransactionsResponse>(url);
   return response.data;
 }
 
 export async function createTransaction(
   year: number,
-  data: CreateTransactionRequest
+  data: CreateTransactionRequest,
+  cpf?: string | null
 ): Promise<CreateTransactionResponse> {
-  const response = await api.post<CreateTransactionResponse>(
-    transactionsEndpoints.create(year),
-    data
-  );
+  let url = transactionsEndpoints.create(year);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.post<CreateTransactionResponse>(url, data);
   return response.data;
 }
 
 export async function updateTransaction(
   year: number,
   transactionId: string,
-  data: UpdateTransactionRequest
+  data: UpdateTransactionRequest,
+  cpf?: string | null
 ): Promise<UpdateTransactionResponse> {
-  const response = await api.patch<UpdateTransactionResponse>(
-    transactionsEndpoints.update(year, transactionId),
-    data
-  );
+  let url = transactionsEndpoints.update(year, transactionId);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.patch<UpdateTransactionResponse>(url, data);
   return response.data;
 }
 
 export async function deleteTransaction(
   year: number,
-  transactionId: string
+  transactionId: string,
+  cpf?: string | null
 ): Promise<DeleteTransactionResponse> {
-  const response = await api.delete<DeleteTransactionResponse>(
-    transactionsEndpoints.delete(year, transactionId)
-  );
+  let url = transactionsEndpoints.delete(year, transactionId);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.delete<DeleteTransactionResponse>(url);
   return response.data;
 }
 
 export async function uploadComprovantes(
   year: number,
   transactionId: string,
-  files: File[]
+  files: File[],
+  cpf?: string | null
 ): Promise<UploadComprovantesResponse> {
   const formData = new FormData();
   
@@ -129,10 +148,13 @@ export async function uploadComprovantes(
     formData.append('file', file);
   });
 
-  const response = await api.post<UploadComprovantesResponse>(
-    transactionsEndpoints.uploadComprovantes(year, transactionId),
-    formData
-  );
+  let url = transactionsEndpoints.uploadComprovantes(year, transactionId);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+
+  const response = await api.post<UploadComprovantesResponse>(url, formData);
   
   return response.data;
 }
@@ -140,14 +162,17 @@ export async function uploadComprovantes(
 export async function deleteComprovante(
   year: number,
   transactionId: string,
-  storagePath: string
+  storagePath: string,
+  cpf?: string | null
 ): Promise<DeleteComprovanteResponse> {
-  const response = await api.delete<DeleteComprovanteResponse>(
-    transactionsEndpoints.deleteComprovante(year, transactionId),
-    {
-      data: { storagePath },
-    }
-  );
+  let url = transactionsEndpoints.deleteComprovante(year, transactionId);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.delete<DeleteComprovanteResponse>(url, {
+    data: { storagePath },
+  });
   return response.data;
 }
 

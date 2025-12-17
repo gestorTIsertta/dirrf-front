@@ -1,5 +1,5 @@
 import { useState, forwardRef, useImperativeHandle } from 'react';
-import { Box, Card, Stack, Typography, Button, TextField, Table, TableHead, TableRow, TableCell, TableBody, InputAdornment, IconButton, Tooltip } from '@mui/material';
+import { Box, Card, Stack, Typography, TextField, Table, TableHead, TableRow, TableCell, TableBody, InputAdornment, IconButton, Tooltip, TablePagination } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import Iconify from 'src/components/iconify/iconify';
 import { COLORS } from 'src/constants/declaracao';
@@ -11,6 +11,8 @@ import { OperacaoChip } from './operacao-chip';
 import { ActionButtons } from './action-buttons';
 import { useItens } from 'src/hooks/use-itens';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
+import { usePagination, paginateItems } from 'src/utils/pagination';
+import { handleError } from 'src/utils/error-handler';
 import { ItemDeclarado, Banco } from 'src/types/declaracao';
 import { formatDate, formatCurrency } from 'src/utils/format';
 import { Loading } from 'src/components/loading/loading';
@@ -26,12 +28,14 @@ export interface ItensTableRef {
 
 export const ItensTable = forwardRef<ItensTableRef, ItensTableProps>(({ year, bancos }, ref) => {
   const { itens, formData, setFormData, loading, updateItem, deleteItem, prepareEditForm, resetForm, loadItens } = useItens({ year });
+  const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination({ totalItems: itens.length });
   
   useImperativeHandle(ref, () => ({
     reload: () => {
       loadItens();
     },
   }));
+
   const { isOpen, itemToDelete, openModal, closeModal, confirmDelete } = useDeleteModal<ItemDeclarado>();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<ItemDeclarado | null>(null);
@@ -55,7 +59,7 @@ export const ItensTable = forwardRef<ItensTableRef, ItensTableProps>(({ year, ba
       await updateItem(itemAtualizado, comprovantesParaDeletar, novosComprovantes);
       handleCloseEditModal();
     } catch (err) {
-      console.error('Erro ao atualizar item:', err);
+      handleError(err, 'Erro ao atualizar item. Tente novamente.');
     }
   };
 
@@ -68,7 +72,7 @@ export const ItensTable = forwardRef<ItensTableRef, ItensTableProps>(({ year, ba
       try {
         await deleteItem(item.id);
       } catch (err) {
-        console.error('Erro ao deletar item:', err);
+        handleError(err, 'Erro ao deletar item. Tente novamente.');
       }
     });
   };
@@ -82,6 +86,8 @@ export const ItensTable = forwardRef<ItensTableRef, ItensTableProps>(({ year, ba
     setModalDocumentosOpen(false);
     setItemSelecionado(null);
   };
+
+  const paginatedItens = paginateItems(itens, page, rowsPerPage);
 
   const getDocumentosItem = () => {
     if (!itemSelecionado || !itemSelecionado.comprovante) {
@@ -186,7 +192,7 @@ export const ItensTable = forwardRef<ItensTableRef, ItensTableProps>(({ year, ba
                 </TableCell>
               </TableRow>
             ) : (
-              itens.map((item) => (
+              paginatedItens.map((item) => (
               <TableRow key={item.id} hover>
                 <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, py: { xs: 1, sm: 1.5 } }}>
                   {item.categoria}
@@ -208,7 +214,7 @@ export const ItensTable = forwardRef<ItensTableRef, ItensTableProps>(({ year, ba
                     <Tooltip title="Visualizar documentos">
                       <IconButton
                         size="small"
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                           e.stopPropagation();
                           handleOpenDocumentos(item);
                         }}
@@ -235,32 +241,36 @@ export const ItensTable = forwardRef<ItensTableRef, ItensTableProps>(({ year, ba
           </TableBody>
         </Table>
       </Box>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between"
-        mt={2}
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        spacing={1}
-      >
-        <Typography variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
-          Mostrando 6 de 18 itens
-        </Typography>
-        <Stack direction="row" spacing={1}>
-          <Button
-            size="small"
-            variant="contained"
-            sx={{ bgcolor: COLORS.primary, minWidth: { xs: 28, sm: 32 }, fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
-          >
-            1
-          </Button>
-          <Button size="small" variant="outlined" sx={{ minWidth: { xs: 28, sm: 32 }, fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
-            2
-          </Button>
-          <Button size="small" variant="outlined" sx={{ minWidth: { xs: 28, sm: 32 }, fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
-            3
-          </Button>
-        </Stack>
-      </Stack>
+      
+      {itens.length > 0 && (
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          component="div"
+          count={itens.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Linhas por página:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`}
+          sx={{
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            '& .MuiTablePagination-toolbar': {
+              flexWrap: 'wrap',
+              px: { xs: 1, sm: 2 },
+              justifyContent: 'flex-end',
+            },
+            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              mb: { xs: 1, sm: 0 },
+            },
+            '& .MuiTablePagination-select': {
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            },
+          }}
+        />
+      )}
 
       <ModalEditItem
         open={editModalOpen}

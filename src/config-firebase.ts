@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
@@ -11,7 +11,25 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
 };
 
-export const firebaseApp = initializeApp(firebaseConfig);
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  console.warn('[Firebase] Configuração incompleta. Verifique as variáveis de ambiente.');
+}
+
+function getFirebaseApp() {
+  try {
+    const existingApp = getApps().find(app => app.name === '[DEFAULT]' || !app.name);
+    if (existingApp) {
+      return existingApp;
+    }
+    return initializeApp(firebaseConfig);
+  } catch (error) {
+    console.error('Erro ao inicializar Firebase:', error);
+    // Se falhar, tenta inicializar normalmente
+    return initializeApp(firebaseConfig);
+  }
+}
+
+export const firebaseApp = getFirebaseApp();
 export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
 

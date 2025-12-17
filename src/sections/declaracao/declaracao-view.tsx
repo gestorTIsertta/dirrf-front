@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Box, Container } from '@mui/material';
 import { useDeclaracao } from 'src/hooks/use-declaracao';
 import { useModals } from 'src/hooks/use-modals';
 import { useDeclaracaoYear } from 'src/hooks/use-declaracao-year';
+import { useTransactions } from 'src/hooks/use-transactions';
 import { DeclaracaoHeader } from 'src/components/declaracao/declaracao-header';
 import { ResumoCards } from 'src/components/declaracao/resumo-cards';
 import { CategoriasGrid } from 'src/components/declaracao/categorias-grid';
@@ -20,20 +21,21 @@ import { ModalParticipacao } from 'src/components/declaracao/modal-participacao'
 import { ModalAtividadeRural } from 'src/components/declaracao/modal-atividade-rural';
 import { COLORS } from 'src/constants/declaracao';
 import { Banco, CompraVenda } from 'src/types/declaracao';
-import * as transactionsApi from 'src/api/requests/transactions';
-import * as incomeDocumentsApi from 'src/api/requests/income-documents';
-import {
-  convertCategoriaToBackend,
-  convertTipoOperacaoToBackend,
-  convertDateToBackend,
-  convertValueToBackend,
-} from 'src/api/utils/converters';
 
 export default function DeclaracaoView() {
   const { year, setYear } = useDeclaracaoYear();
   const [bancos, setBancos] = useState<Banco[]>([]);
   const itensTableRef = useRef<{ reload: () => void } | null>(null);
   const documentosListRef = useRef<{ reload: () => void } | null>(null);
+
+  const {
+    submitCompraVenda,
+    submitComprovante,
+    submitEmprestimo,
+    submitParticipacao,
+    submitAtividadeRural,
+    updateRefs,
+  } = useTransactions({ year });
 
   const {
     formData,
@@ -73,7 +75,11 @@ export default function DeclaracaoView() {
     closeAtividadeRural,
   } = useModals();
 
-  const handleOpenCompraVenda = (operacao: 'Compra' | 'Venda', categoria: string) => {
+  useEffect(() => {
+    updateRefs(itensTableRef.current, documentosListRef.current);
+  }, [updateRefs]);
+
+  const handleOpenCompraVenda = useCallback((operacao: 'Compra' | 'Venda', categoria: string) => {
     if (categoria === 'Empréstimos') {
       resetEmprestimoData();
       openEmprestimo();
@@ -91,155 +97,50 @@ export default function DeclaracaoView() {
     }
     resetFormData();
     openCompraVenda(operacao, categoria);
-  };
+  }, [resetEmprestimoData, openEmprestimo, resetParticipacaoData, openParticipacao, resetAtividadeRuralData, openAtividadeRural, resetFormData, openCompraVenda]);
 
-  const handleCloseCompraVenda = () => {
+  const handleCloseCompraVenda = useCallback(() => {
     closeCompraVenda();
     resetFormData();
-  };
+  }, [closeCompraVenda, resetFormData]);
 
-  const handleSubmitCompraVenda = async (compraVenda: CompraVenda) => {
-    try {
-      const transactionData = {
-        categoria: convertCategoriaToBackend(compraVenda.categoria),
-        tipo: convertTipoOperacaoToBackend(compraVenda.operacao),
-        data: convertDateToBackend(compraVenda.data),
-        valor: convertValueToBackend(compraVenda.valor),
-        descricao: compraVenda.tipo,
-        bancoId: compraVenda.bancoId || undefined,
-      };
+  const handleSubmitCompraVenda = useCallback(async (compraVenda: CompraVenda) => {
+    await submitCompraVenda(compraVenda);
+    handleCloseCompraVenda();
+  }, [submitCompraVenda, handleCloseCompraVenda]);
 
-      const response = await transactionsApi.createTransaction(year, transactionData);
-
-      if (response.transaction?.id) {
-        const arquivosParaUpload = compraVenda.comprovantesAnexados && compraVenda.comprovantesAnexados.length > 0
-          ? compraVenda.comprovantesAnexados
-          : (compraVenda.comprovante ? [compraVenda.comprovante] : []);
-        
-        if (arquivosParaUpload.length > 0) {
-          await transactionsApi.uploadComprovantes(year, response.transaction.id, arquivosParaUpload);
-        }
-      }
-
-      if (itensTableRef.current?.reload) {
-        itensTableRef.current.reload();
-      }
-
-      handleCloseCompraVenda();
-    } catch (error) {
-      console.error('Erro ao criar transação:', error);
-      alert('Erro ao salvar transação. Tente novamente.');
-    }
-  };
-
-  const handleOpenComprovante = () => {
+  const handleOpenComprovante = useCallback(() => {
     resetComprovanteData();
     openComprovante();
-  };
+  }, [resetComprovanteData, openComprovante]);
 
-  const handleCloseComprovante = () => {
+  const handleCloseComprovante = useCallback(() => {
     closeComprovante();
     resetComprovanteData();
-  };
+  }, [closeComprovante, resetComprovanteData]);
 
-  const handleSubmitComprovante = async (bancoId: string, arquivo: File) => {
-    try {
-      await incomeDocumentsApi.uploadIncomeDocument(year, {
-        file: arquivo,
-        bankId: bancoId,
-      });
-      
-      if (documentosListRef.current?.reload) {
-        documentosListRef.current.reload();
-      }
-      
-      handleCloseComprovante();
-    } catch (error) {
-      console.error('Erro ao anexar comprovante:', error);
-      alert('Erro ao anexar comprovante. Tente novamente.');
-    }
-  };
+  const handleSubmitComprovante = useCallback(async (bancoId: string, arquivo: File) => {
+    await submitComprovante(bancoId, arquivo);
+    handleCloseComprovante();
+  }, [submitComprovante, handleCloseComprovante]);
 
-  const handleSubmitEmprestimo = async (data: typeof emprestimoData) => {
-    try {
-      const transactionData = {
-        categoria: convertCategoriaToBackend('Empréstimos'),
-        tipo: 'compra' as const,
-        data: convertDateToBackend(data.data || ''),
-        valor: convertValueToBackend(data.valor || ''),
-        descricao: 'Empréstimo',
-        bancoId: data.bancoId || undefined,
-      };
+  const handleSubmitEmprestimo = useCallback(async (data: typeof emprestimoData) => {
+    await submitEmprestimo(data);
+    closeEmprestimo();
+    resetEmprestimoData();
+  }, [submitEmprestimo, closeEmprestimo, resetEmprestimoData]);
 
-      await transactionsApi.createTransaction(year, transactionData);
+  const handleSubmitParticipacao = useCallback(async (data: typeof participacaoData) => {
+    await submitParticipacao(data);
+    closeParticipacao();
+    resetParticipacaoData();
+  }, [submitParticipacao, closeParticipacao, resetParticipacaoData]);
 
-      if (itensTableRef.current?.reload) {
-        itensTableRef.current.reload();
-      }
-
-      closeEmprestimo();
-      resetEmprestimoData();
-    } catch (error) {
-      console.error('Erro ao criar empréstimo:', error);
-      alert('Erro ao salvar empréstimo. Tente novamente.');
-    }
-  };
-
-  const handleSubmitParticipacao = async (data: typeof participacaoData) => {
-    try {
-      const transactionData = {
-        categoria: convertCategoriaToBackend('Participações em Empresas'),
-        tipo: 'compra' as const,
-        data: new Date().toISOString(),
-        valor: 0,
-        descricao: `Participação: ${data.razaoSocial || ''} - CNPJ: ${data.cnpj || ''} - ${data.percentual || ''}%`,
-        bancoId: undefined,
-      };
-
-      await transactionsApi.createTransaction(year, transactionData);
-
-      if (itensTableRef.current?.reload) {
-        itensTableRef.current.reload();
-      }
-
-      closeParticipacao();
-      resetParticipacaoData();
-    } catch (error) {
-      console.error('Erro ao criar participação:', error);
-      alert('Erro ao salvar participação. Tente novamente.');
-    }
-  };
-
-  const handleSubmitAtividadeRural = async (data: typeof atividadeRuralData) => {
-    try {
-      if (data.emprestimoRuralBancoId && data.emprestimoRuralValor) {
-        const transactionData = {
-          categoria: convertCategoriaToBackend('Atividade Rural'),
-          tipo: 'compra' as const,
-          data: new Date().toISOString(),
-          valor: convertValueToBackend(data.emprestimoRuralValor),
-          descricao: `Atividade Rural - Empréstimo Rural: ${data.bensAtividadeRural || ''}`,
-          bancoId: data.emprestimoRuralBancoId || undefined,
-        };
-
-        const response = await transactionsApi.createTransaction(year, transactionData);
-
-        if (response.transaction?.id && data.fichasAnexadas && data.fichasAnexadas.length > 0) {
-          await transactionsApi.uploadComprovantes(year, response.transaction.id, data.fichasAnexadas);
-        }
-      }
-
-      if (itensTableRef.current?.reload) {
-        itensTableRef.current.reload();
-      }
-
-      closeAtividadeRural();
-      resetAtividadeRuralData();
-    } catch (error) {
-      console.error('Erro ao criar atividade rural:', error);
-      alert('Erro ao salvar atividade rural. Tente novamente.');
-    }
-  };
+  const handleSubmitAtividadeRural = useCallback(async (data: typeof atividadeRuralData) => {
+    await submitAtividadeRural(data);
+    closeAtividadeRural();
+    resetAtividadeRuralData();
+  }, [submitAtividadeRural, closeAtividadeRural, resetAtividadeRuralData]);
 
   return (
     <Box sx={{ bgcolor: COLORS.grey100, minHeight: '100vh', py: { xs: 2, sm: 3 } }}>

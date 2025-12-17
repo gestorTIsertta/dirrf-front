@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Dependente, FormDataDependente } from 'src/types/declaracao';
 import { formatDateToInput } from 'src/utils/date-format';
 import { convertDateFromBackend, convertDateToBackend } from 'src/api/utils/converters';
 import * as dependentsApi from 'src/api/requests/dependents';
+import { useClientCpf } from 'src/hooks/use-contador-context';
 
 const initialFormData: FormDataDependente = {
   nomeCompleto: '',
@@ -26,12 +28,25 @@ export function useDependentes({ year, initialDependentes, onDependentesChange }
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const clientCpf = useClientCpf();
+  const location = useLocation();
 
   const loadDependentes = useCallback(async () => {
+    const currentCpf = clientCpf;
+    
     try {
       setLoading(true);
       setError(null);
-      const response = await dependentsApi.listDependents(year);
+      
+      if (currentCpf !== clientCpf) {
+        return;
+      }
+      
+      const response = await dependentsApi.listDependents(year, currentCpf);
+      
+      if (currentCpf !== clientCpf) {
+        return;
+      }
       
       const dependentesConvertidos: Dependente[] = response.dependents.map((dependent) => ({
         id: dependent.id,
@@ -46,16 +61,28 @@ export function useDependentes({ year, initialDependentes, onDependentesChange }
       
       setDependentes(dependentesConvertidos);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar dependentes');
-      console.error('Erro ao carregar dependentes:', err);
+      if (currentCpf === clientCpf) {
+        setError(err instanceof Error ? err.message : 'Erro ao carregar dependentes');
+      }
     } finally {
-      setLoading(false);
+      if (currentCpf === clientCpf) {
+        setLoading(false);
+      }
     }
-  }, [year]);
+  }, [year, clientCpf]);
 
   useEffect(() => {
+    if (location.pathname === '/declaracao') {
+      const searchParams = new URLSearchParams(location.search);
+      const cpfFromQuery = searchParams.get('cpf');
+      
+      if (cpfFromQuery && !clientCpf) {
+        return;
+      }
+    }
+    
     loadDependentes();
-  }, [loadDependentes]);
+  }, [loadDependentes, clientCpf, location.pathname, location.search]);
 
   useEffect(() => {
     if (initialDependentes) {
@@ -81,7 +108,7 @@ export function useDependentes({ year, initialDependentes, onDependentesChange }
         nomeMae: dependente.nomeMae,
         nacionalidade: dependente.nacionalidade,
         sexo: dependente.sexo,
-      });
+      }, clientCpf);
 
       const novoDependente: Dependente = {
         id: response.dependent.id,
@@ -118,7 +145,7 @@ export function useDependentes({ year, initialDependentes, onDependentesChange }
         nomeMae: dependenteAtualizado.nomeMae,
         nacionalidade: dependenteAtualizado.nacionalidade,
         sexo: dependenteAtualizado.sexo,
-      });
+      }, clientCpf);
 
       setDependentes((prev) => prev.map((d) => (d.id === id ? dependenteAtualizado : d)));
       onDependentesChange?.(dependentes.map((d) => (d.id === id ? dependenteAtualizado : d)));
@@ -136,7 +163,7 @@ export function useDependentes({ year, initialDependentes, onDependentesChange }
       setLoading(true);
       setError(null);
       
-      await dependentsApi.deleteDependent(year, id);
+      await dependentsApi.deleteDependent(year, id, clientCpf);
       
       setDependentes((prev) => prev.filter((d) => d.id !== id));
       onDependentesChange?.(dependentes.filter((d) => d.id !== id));

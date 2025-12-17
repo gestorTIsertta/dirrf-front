@@ -5,7 +5,6 @@ import {
   FormDataEmprestimo,
   FormDataParticipacao,
   FormDataAtividadeRural,
-  CompraVenda,
 } from 'src/types/declaracao';
 
 const initialFormData: FormDataCompraVenda = {
@@ -51,8 +50,6 @@ export function useDeclaracao() {
   const [participacaoData, setParticipacaoData] = useState<FormDataParticipacao>(initialParticipacaoData);
   const [atividadeRuralData, setAtividadeRuralData] = useState<FormDataAtividadeRural>(initialAtividadeRuralData);
 
-  const addCompraVenda = (_compraVenda: CompraVenda) => {};
-
   const resetFormData = () => {
     setFormData(initialFormData);
   };
@@ -84,7 +81,6 @@ export function useDeclaracao() {
     setEmprestimoData,
     setParticipacaoData,
     setAtividadeRuralData,
-    addCompraVenda,
     resetFormData,
     resetComprovanteData,
     resetEmprestimoData,

@@ -66,48 +66,67 @@ export interface DeleteDocumentResponse {
   message: string;
 }
 
-export async function listServicesTaken(year: number): Promise<ListServicesTakenResponse> {
-  const response = await api.get<ListServicesTakenResponse>(servicesTakenEndpoints.list(year));
+export async function listServicesTaken(
+  year: number,
+  cpf?: string | null
+): Promise<ListServicesTakenResponse> {
+  let url = servicesTakenEndpoints.list(year);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.get<ListServicesTakenResponse>(url);
   return response.data;
 }
 
 export async function createServiceTaken(
   year: number,
-  data: CreateServiceTakenRequest
+  data: CreateServiceTakenRequest,
+  cpf?: string | null
 ): Promise<CreateServiceTakenResponse> {
-  const response = await api.post<CreateServiceTakenResponse>(
-    servicesTakenEndpoints.create(year),
-    data
-  );
+  let url = servicesTakenEndpoints.create(year);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.post<CreateServiceTakenResponse>(url, data);
   return response.data;
 }
 
 export async function updateServiceTaken(
   year: number,
   serviceId: string,
-  data: UpdateServiceTakenRequest
+  data: UpdateServiceTakenRequest,
+  cpf?: string | null
 ): Promise<UpdateServiceTakenResponse> {
-  const response = await api.patch<UpdateServiceTakenResponse>(
-    servicesTakenEndpoints.update(year, serviceId),
-    data
-  );
+  let url = servicesTakenEndpoints.update(year, serviceId);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.patch<UpdateServiceTakenResponse>(url, data);
   return response.data;
 }
 
 export async function deleteServiceTaken(
   year: number,
-  serviceId: string
+  serviceId: string,
+  cpf?: string | null
 ): Promise<DeleteServiceTakenResponse> {
-  const response = await api.delete<DeleteServiceTakenResponse>(
-    servicesTakenEndpoints.delete(year, serviceId)
-  );
+  let url = servicesTakenEndpoints.delete(year, serviceId);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.delete<DeleteServiceTakenResponse>(url);
   return response.data;
 }
 
 export async function uploadServiceDocuments(
   year: number,
   serviceId: string,
-  files: File[]
+  files: File[],
+  cpf?: string | null
 ): Promise<UploadDocumentsResponse> {
   const formData = new FormData();
   
@@ -115,10 +134,13 @@ export async function uploadServiceDocuments(
     formData.append('file', file);
   });
 
-  const response = await api.post<UploadDocumentsResponse>(
-    servicesTakenEndpoints.uploadDocuments(year, serviceId),
-    formData
-  );
+  let url = servicesTakenEndpoints.uploadDocuments(year, serviceId);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+
+  const response = await api.post<UploadDocumentsResponse>(url, formData);
   
   return response.data;
 }
@@ -126,14 +148,17 @@ export async function uploadServiceDocuments(
 export async function deleteServiceDocument(
   year: number,
   serviceId: string,
-  storagePath: string
+  storagePath: string,
+  cpf?: string | null
 ): Promise<DeleteDocumentResponse> {
-  const response = await api.delete<DeleteDocumentResponse>(
-    servicesTakenEndpoints.deleteDocument(year, serviceId),
-    {
-      data: { storagePath },
-    }
-  );
+  let url = servicesTakenEndpoints.deleteDocument(year, serviceId);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.delete<DeleteDocumentResponse>(url, {
+    data: { storagePath },
+  });
   return response.data;
 }
 

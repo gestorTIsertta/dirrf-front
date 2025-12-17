@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Grid, Card, Stack, Typography, Chip, Box } from '@mui/material';
 import { CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 import Iconify from 'src/components/iconify/iconify';
 import { COLORS } from 'src/constants/declaracao';
 import { getSummary, SummaryResponse } from 'src/api/requests/summary';
 import { Loading } from 'src/components/loading/loading';
+import { useClientCpf } from 'src/hooks/use-contador-context';
+import { handleError } from 'src/utils/error-handler';
 import { formatCurrency } from 'src/utils/format';
 
 interface ResumoCardsProps {
@@ -14,15 +17,26 @@ interface ResumoCardsProps {
 export function ResumoCards({ year }: ResumoCardsProps) {
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const clientCpf = useClientCpf();
+  const location = useLocation();
 
   useEffect(() => {
+    if (location.pathname === '/declaracao') {
+      const searchParams = new URLSearchParams(location.search);
+      const cpfFromQuery = searchParams.get('cpf');
+      
+      if (cpfFromQuery && !clientCpf) {
+        return;
+      }
+    }
+    
     const loadSummary = async () => {
       try {
         setLoading(true);
-        const data = await getSummary(year);
+        const data = await getSummary(year, clientCpf);
         setSummary(data);
       } catch (err) {
-        console.error('Erro ao carregar resumo:', err);
+        handleError(err, 'Erro ao carregar resumo.');
         setSummary({
           rendimentos: { tributaveis: 0, isentos: 0, exclusivos: 0 },
           bensEDireitos: { valorTotal: 0, itensDeclarados: 0 },
@@ -35,7 +49,7 @@ export function ResumoCards({ year }: ResumoCardsProps) {
     };
 
     loadSummary();
-  }, [year]);
+  }, [year, clientCpf, location.pathname, location.search]);
 
   if (loading) {
     return (

@@ -54,38 +54,60 @@ export interface DeleteDependentResponse {
   message: string;
 }
 
-export async function listDependents(year: number): Promise<ListDependentsResponse> {
-  const response = await api.get<ListDependentsResponse>(dependentsEndpoints.list(year));
+export async function listDependents(
+  year: number,
+  cpf?: string | null
+): Promise<ListDependentsResponse> {
+  let url = dependentsEndpoints.list(year);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.get<ListDependentsResponse>(url);
   return response.data;
 }
 
 export async function createDependent(
   year: number,
-  data: CreateDependentRequest
+  data: CreateDependentRequest,
+  cpf?: string | null
 ): Promise<CreateDependentResponse> {
-  const response = await api.post<CreateDependentResponse>(dependentsEndpoints.create(year), data);
+  let url = dependentsEndpoints.create(year);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.post<CreateDependentResponse>(url, data);
   return response.data;
 }
 
 export async function updateDependent(
   year: number,
   dependentId: string,
-  data: UpdateDependentRequest
+  data: UpdateDependentRequest,
+  cpf?: string | null
 ): Promise<UpdateDependentResponse> {
-  const response = await api.patch<UpdateDependentResponse>(
-    dependentsEndpoints.update(year, dependentId),
-    data
-  );
+  let url = dependentsEndpoints.update(year, dependentId);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.patch<UpdateDependentResponse>(url, data);
   return response.data;
 }
 
 export async function deleteDependent(
   year: number,
-  dependentId: string
+  dependentId: string,
+  cpf?: string | null
 ): Promise<DeleteDependentResponse> {
-  const response = await api.delete<DeleteDependentResponse>(
-    dependentsEndpoints.delete(year, dependentId)
-  );
+  let url = dependentsEndpoints.delete(year, dependentId);
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    url = `${url}?cpf=${cleanCpf}`;
+  }
+  const response = await api.delete<DeleteDependentResponse>(url);
   return response.data;
 }
+
 

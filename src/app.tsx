@@ -4,6 +4,7 @@ import { SnackbarProvider } from 'notistack';
 import Router from 'src/routes/sections';
 import ThemeProvider from 'src/theme';
 import ProgressBar from 'src/components/progress-bar/progress-bar';
+import { ContadorProvider } from 'src/hooks/use-contador-context';
 
 export default function App() {
   return (
@@ -16,8 +17,10 @@ export default function App() {
         }}
         autoHideDuration={4000}
       >
-        <ProgressBar />
-        <Router />
+        <ContadorProvider>
+          <ProgressBar />
+          <Router />
+        </ContadorProvider>
       </SnackbarProvider>
     </ThemeProvider>
   );

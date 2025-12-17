@@ -24,11 +24,11 @@ export interface SummaryResponse {
   };
 }
 
-export async function getSummary(year: number): Promise<SummaryResponse> {
+export async function getSummary(year: number, cpf?: string | null): Promise<SummaryResponse> {
   try {
     const [transactionsResponse, servicesResponse] = await Promise.all([
-      transactionsApi.listTransactions(year),
-      servicesTakenApi.listServicesTaken(year),
+      transactionsApi.listTransactions(year, cpf),
+      servicesTakenApi.listServicesTaken(year, cpf),
     ]);
 
     const transactions = transactionsResponse.transactions;

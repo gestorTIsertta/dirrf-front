@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ServicoTomado, FormDataServicoTomado } from 'src/types/declaracao';
 import { convertValueFromBackend } from 'src/api/utils/converters';
 import * as servicesTakenApi from 'src/api/requests/services-taken';
+import { useClientCpf } from 'src/hooks/use-contador-context';
 
 const initialFormData: FormDataServicoTomado = {
   nomePrestador: '',
@@ -24,12 +26,25 @@ export function useServicosTomados({ year, initialServicosTomados, onServicosTom
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const clientCpf = useClientCpf();
+  const location = useLocation();
 
   const loadServicosTomados = useCallback(async () => {
+    const currentCpf = clientCpf;
+    
     try {
       setLoading(true);
       setError(null);
-      const response = await servicesTakenApi.listServicesTaken(year);
+      
+      if (currentCpf !== clientCpf) {
+        return;
+      }
+      
+      const response = await servicesTakenApi.listServicesTaken(year, currentCpf);
+      
+      if (currentCpf !== clientCpf) {
+        return;
+      }
       
       const servicosConvertidos: ServicoTomado[] = response.services.map((service) => ({
         id: service.id,
@@ -43,16 +58,30 @@ export function useServicosTomados({ year, initialServicosTomados, onServicosTom
       
       setServicosTomados(servicosConvertidos);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar serviços tomados');
-      console.error('Erro ao carregar serviços tomados:', err);
+      if (currentCpf === clientCpf) {
+        setError(err instanceof Error ? err.message : 'Erro ao carregar serviços tomados');
+      }
     } finally {
-      setLoading(false);
+      if (currentCpf === clientCpf) {
+        setLoading(false);
+      }
     }
-  }, [year]);
+  }, [year, clientCpf]);
 
   useEffect(() => {
+    // Só carrega serviços tomados se não estiver na rota de declaração com query string
+    // ou se o CPF já estiver disponível (para evitar chamada dupla)
+    if (location.pathname === '/declaracao') {
+      const searchParams = new URLSearchParams(location.search);
+      const cpfFromQuery = searchParams.get('cpf');
+      
+      if (cpfFromQuery && !clientCpf) {
+        return;
+      }
+    }
+    
     loadServicosTomados();
-  }, [loadServicosTomados]);
+  }, [loadServicosTomados, clientCpf, location.pathname, location.search]);
 
   useEffect(() => {
     if (initialServicosTomados) {
@@ -81,7 +110,7 @@ export function useServicosTomados({ year, initialServicosTomados, onServicosTom
         tipoServico: servicoTomado.tipoServico,
         valorTotal,
         valorReembolsado,
-      });
+      }, clientCpf);
 
       const novoServico: ServicoTomado = {
         id: response.service.id,
@@ -122,7 +151,7 @@ export function useServicosTomados({ year, initialServicosTomados, onServicosTom
         tipoServico: servicoTomadoAtualizado.tipoServico,
         valorTotal,
         valorReembolsado,
-      });
+      }, clientCpf);
 
       setServicosTomados((prev) => prev.map((s) => (s.id === id ? servicoTomadoAtualizado : s)));
       onServicosTomadosChange?.(servicosTomados.map((s) => (s.id === id ? servicoTomadoAtualizado : s)));
@@ -140,7 +169,7 @@ export function useServicosTomados({ year, initialServicosTomados, onServicosTom
       setLoading(true);
       setError(null);
       
-      await servicesTakenApi.deleteServiceTaken(year, id);
+      await servicesTakenApi.deleteServiceTaken(year, id, clientCpf);
       
       setServicosTomados((prev) => prev.filter((s) => s.id !== id));
       onServicosTomadosChange?.(servicosTomados.filter((s) => s.id !== id));

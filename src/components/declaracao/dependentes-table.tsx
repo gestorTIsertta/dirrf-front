@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Card, Stack, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
+import { Box, Card, Stack, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody, TablePagination } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { Dependente } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
@@ -8,6 +8,8 @@ import { ModalDependente } from './modal-dependente';
 import { ActionButtons } from './action-buttons';
 import { useDependentes } from 'src/hooks/use-dependentes';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
+import { usePagination, paginateItems } from 'src/utils/pagination';
+import { handleError } from 'src/utils/error-handler';
 import { formatCPF, formatDate } from 'src/utils/format';
 import { Loading } from 'src/components/loading/loading';
 
@@ -33,6 +35,7 @@ export function DependentesTable({ year, dependentes: dependentesProp, onDepende
 
   const { isOpen, itemToDelete, openModal, closeModal } = useDeleteModal<Dependente>();
   const [modalOpen, setModalOpen] = useState(false);
+  const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination({ totalItems: dependentes.length });
 
   const handleOpenModal = (dependente?: Dependente) => {
     if (dependente) {
@@ -48,6 +51,8 @@ export function DependentesTable({ year, dependentes: dependentesProp, onDepende
     resetForm();
   };
 
+  const paginatedDependentes = paginateItems(dependentes, page, rowsPerPage);
+
   const handleSubmit = async (dependente: Dependente) => {
     try {
       if (editingId) {
@@ -57,7 +62,7 @@ export function DependentesTable({ year, dependentes: dependentesProp, onDepende
       }
       handleCloseModal();
     } catch (error) {
-      console.error('Erro ao salvar dependente:', error);
+      handleError(error, 'Erro ao salvar dependente. Tente novamente.');
     }
   };
 
@@ -71,7 +76,7 @@ export function DependentesTable({ year, dependentes: dependentesProp, onDepende
         await deleteDependente(itemToDelete.id);
       }
     } catch (error) {
-      console.error('Erro ao deletar dependente:', error);
+      handleError(error, 'Erro ao deletar dependente. Tente novamente.');
     }
   };
 
@@ -163,7 +168,7 @@ export function DependentesTable({ year, dependentes: dependentesProp, onDepende
                   </TableCell>
                 </TableRow>
               ) : (
-                dependentes.map((dependente) => (
+                paginatedDependentes.map((dependente) => (
                   <TableRow key={dependente.id} hover>
                     <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, py: { xs: 1, sm: 1.5 } }}>
                       <Typography fontWeight={600}>{dependente.nomeCompleto}</Typography>
@@ -195,6 +200,36 @@ export function DependentesTable({ year, dependentes: dependentesProp, onDepende
             </TableBody>
           </Table>
         </Box>
+        
+        {dependentes.length > 0 && (
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            component="div"
+            count={dependentes.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            labelRowsPerPage="Linhas por página:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`}
+            sx={{
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              '& .MuiTablePagination-toolbar': {
+                flexWrap: 'wrap',
+                px: { xs: 1, sm: 2 },
+                justifyContent: 'flex-end',
+              },
+              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                mb: { xs: 1, sm: 0 },
+              },
+              '& .MuiTablePagination-select': {
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              },
+            }}
+          />
+        )}
       </Card>
 
       <ModalDependente

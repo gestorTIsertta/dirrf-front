@@ -50,4 +50,12 @@ export const incomeDocumentsEndpoints = {
   remove: (year: number) => `${BASE_PATH}/${year}/income-documents`,
 };
 
+export const backofficeClientsEndpoints = {
+  list: () => '/clients',
+  listByResponsible: () => '/clients/by-responsible',
+  get: (clientId: string) => `/clients/${clientId}`,
+  update: (clientId: string) => `/clients/${clientId}`,
+  archive: (clientId: string) => `/clients/${clientId}`,
+  createAccess: () => '/clients/access',
+};
 

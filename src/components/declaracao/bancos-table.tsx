@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Card, Stack, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody, IconButton, Tooltip } from '@mui/material';
+import { Box, Card, Stack, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody, IconButton, Tooltip, TablePagination } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import Iconify from 'src/components/iconify/iconify';
 import { Banco } from 'src/types/declaracao';
@@ -11,6 +11,8 @@ import { ModalDocumentos } from './modal-documentos';
 import { ActionButtons } from './action-buttons';
 import { useBancos } from 'src/hooks/use-bancos';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
+import { usePagination, paginateItems } from 'src/utils/pagination';
+import { handleError } from 'src/utils/error-handler';
 import { formatDate } from 'src/utils/format';
 import { Loading } from 'src/components/loading/loading';
 
@@ -39,6 +41,7 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDocumentosOpen, setModalDocumentosOpen] = useState(false);
   const [bancoSelecionado, setBancoSelecionado] = useState<Banco | null>(null);
+  const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination({ totalItems: bancos.length });
 
   const handleOpenModal = async (banco?: Banco) => {
     if (banco) {
@@ -63,7 +66,7 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
       }
       handleCloseModal();
     } catch (err) {
-      console.error('Erro ao salvar banco:', err);
+      handleError(err, 'Erro ao salvar banco. Tente novamente.');
     }
   };
 
@@ -76,7 +79,7 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
       try {
         await deleteBanco(banco.id);
       } catch (err) {
-        console.error('Erro ao deletar banco:', err);
+        handleError(err, 'Erro ao deletar banco. Tente novamente.');
       }
     });
   };
@@ -90,6 +93,8 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
     setModalDocumentosOpen(false);
     setBancoSelecionado(null);
   };
+
+  const paginatedBancos = paginateItems(bancos, page, rowsPerPage);
 
   const getDocumentosBanco = () => {
     if (!bancoSelecionado) {
@@ -197,7 +202,7 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
                   </TableCell>
                 </TableRow>
               ) : (
-                bancos.map((banco) => {
+                paginatedBancos.map((banco) => {
                 let codigoCompe = banco.codigoCompe;
                 if (!codigoCompe && banco.nome) {
                   codigoCompe = getCodigoCompeByNome(banco.nome) || undefined;
@@ -281,6 +286,36 @@ export function BancosTable({ year, bancos: bancosProp, onBancosChange }: Readon
             </TableBody>
           </Table>
         </Box>
+        
+        {bancos.length > 0 && (
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            component="div"
+            count={bancos.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            labelRowsPerPage="Linhas por página:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`}
+            sx={{
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              '& .MuiTablePagination-toolbar': {
+                flexWrap: 'wrap',
+                px: { xs: 1, sm: 2 },
+                justifyContent: 'flex-end',
+              },
+              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                mb: { xs: 1, sm: 0 },
+              },
+              '& .MuiTablePagination-select': {
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              },
+            }}
+          />
+        )}
       </Card>
 
       <ModalBanco

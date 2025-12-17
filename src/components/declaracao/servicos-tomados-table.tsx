@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Card, Stack, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
+import { Box, Card, Stack, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody, TablePagination } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { ServicoTomado } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
@@ -8,6 +8,8 @@ import { ModalServicoTomado } from './modal-servico-tomado';
 import { ActionButtons } from './action-buttons';
 import { useServicosTomados } from 'src/hooks/use-servicos-tomados';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
+import { usePagination, paginateItems } from 'src/utils/pagination';
+import { handleError } from 'src/utils/error-handler';
 import { formatCPFCNPJ, formatCurrency } from 'src/utils/format';
 import { Loading } from 'src/components/loading/loading';
 
@@ -33,6 +35,7 @@ export function ServicosTomadosTable({ year, servicosTomados: servicosTomadosPro
 
   const { isOpen, itemToDelete, openModal, closeModal } = useDeleteModal<ServicoTomado>();
   const [modalOpen, setModalOpen] = useState(false);
+  const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination({ totalItems: servicosTomados.length });
 
   const handleOpenModal = (servicoTomado?: ServicoTomado) => {
     if (servicoTomado) {
@@ -48,6 +51,8 @@ export function ServicosTomadosTable({ year, servicosTomados: servicosTomadosPro
     resetForm();
   };
 
+  const paginatedServicos = paginateItems(servicosTomados, page, rowsPerPage);
+
   const handleSubmit = async (servicoTomado: ServicoTomado) => {
     try {
       if (editingId) {
@@ -57,7 +62,7 @@ export function ServicosTomadosTable({ year, servicosTomados: servicosTomadosPro
       }
       handleCloseModal();
     } catch (error) {
-      console.error('Erro ao salvar serviço tomado:', error);
+      handleError(error, 'Erro ao salvar serviço tomado. Tente novamente.');
     }
   };
 
@@ -71,7 +76,7 @@ export function ServicosTomadosTable({ year, servicosTomados: servicosTomadosPro
         await deleteServicoTomado(itemToDelete.id);
       }
     } catch (error) {
-      console.error('Erro ao deletar serviço tomado:', error);
+      handleError(error, 'Erro ao deletar serviço tomado. Tente novamente.');
     }
   };
 
@@ -160,7 +165,7 @@ export function ServicosTomadosTable({ year, servicosTomados: servicosTomadosPro
                   </TableCell>
                 </TableRow>
               ) : (
-                servicosTomados.map((servico) => {
+                paginatedServicos.map((servico) => {
                   const valorTotal = parseFloat(servico.valorTotal.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
                   const valorReembolsado = parseFloat((servico.valorReembolsado || '0').replace(/[^\d,]/g, '').replace(',', '.')) || 0;
                   const valorDedutivel = valorTotal - valorReembolsado;
@@ -197,6 +202,36 @@ export function ServicosTomadosTable({ year, servicosTomados: servicosTomadosPro
             </TableBody>
           </Table>
         </Box>
+        
+        {servicosTomados.length > 0 && (
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            component="div"
+            count={servicosTomados.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            labelRowsPerPage="Linhas por página:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`}
+            sx={{
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              '& .MuiTablePagination-toolbar': {
+                flexWrap: 'wrap',
+                px: { xs: 1, sm: 2 },
+                justifyContent: 'flex-end',
+              },
+              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                mb: { xs: 1, sm: 0 },
+              },
+              '& .MuiTablePagination-select': {
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              },
+            }}
+          />
+        )}
       </Card>
 
       <ModalServicoTomado

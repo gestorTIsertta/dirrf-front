@@ -3,6 +3,9 @@ import { Navigate, useRoutes } from 'react-router-dom';
 import LoginPage from 'src/pages/login';
 import ForgotPasswordPage from 'src/pages/forgot-password';
 import DeclaracaoPage from 'src/pages/declaracao';
+import ContadorLoginPage from 'src/pages/contador-login';
+import ContadorDashboardPage from 'src/pages/contador-dashboard';
+import ContadorClientePage from 'src/pages/contador-cliente';
 import NotFoundPage from 'src/pages/404';
 import { paths } from './paths';
 
@@ -23,6 +26,18 @@ export default function Router() {
     {
       path: paths.declaracao,
       element: <DeclaracaoPage />,
+    },
+    {
+      path: paths.contador.login,
+      element: <ContadorLoginPage />,
+    },
+    {
+      path: paths.contador.dashboard,
+      element: <ContadorDashboardPage />,
+    },
+    {
+      path: '/contador/cliente/:clientId',
+      element: <ContadorClientePage />,
     },
     {
       path: paths.page404,

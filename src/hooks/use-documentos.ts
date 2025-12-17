@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Documento } from 'src/types/declaracao';
 import * as incomeDocumentsApi from 'src/api/requests/income-documents';
 import * as documentsApi from 'src/api/requests/documents';
+import { useClientCpf } from 'src/hooks/use-contador-context';
 
 interface UseDocumentosOptions {
   year: number;
@@ -11,6 +13,8 @@ export function useDocumentos({ year }: UseDocumentosOptions) {
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const clientCpf = useClientCpf();
+  const location = useLocation();
 
   const formatRelativeDate = (dateString: string): string => {
     const date = new Date(dateString);
@@ -30,10 +34,21 @@ export function useDocumentos({ year }: UseDocumentosOptions) {
   };
 
   const loadDocumentos = useCallback(async () => {
+    const currentCpf = clientCpf;
+    
     try {
       setLoading(true);
       setError(null);
-      const response = await incomeDocumentsApi.listIncomeDocuments(year);
+      
+      if (currentCpf !== clientCpf) {
+        return;
+      }
+      
+      const response = await incomeDocumentsApi.listIncomeDocuments(year, undefined, currentCpf);
+      
+      if (currentCpf !== clientCpf) {
+        return;
+      }
       
       const documentosConvertidos: Documento[] = response.documents.map((doc, index) => ({
         id: doc.storagePath || `doc-${index}`,
@@ -48,17 +63,29 @@ export function useDocumentos({ year }: UseDocumentosOptions) {
       
       setDocumentos(documentosConvertidos);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar documentos');
-      console.error('Erro ao carregar documentos:', err);
-      setDocumentos([]);
+      if (currentCpf === clientCpf) {
+        setError(err instanceof Error ? err.message : 'Erro ao carregar documentos');
+        setDocumentos([]);
+      }
     } finally {
-      setLoading(false);
+      if (currentCpf === clientCpf) {
+        setLoading(false);
+      }
     }
-  }, [year]);
+  }, [year, clientCpf]);
 
   useEffect(() => {
+    if (location.pathname === '/declaracao') {
+      const searchParams = new URLSearchParams(location.search);
+      const cpfFromQuery = searchParams.get('cpf');
+      
+      if (cpfFromQuery && !clientCpf) {
+        return;
+      }
+    }
+    
     loadDocumentos();
-  }, [loadDocumentos]);
+  }, [loadDocumentos, clientCpf, location.pathname, location.search]);
 
   const deleteDocumento = async (id: number | string) => {
     try {
@@ -67,14 +94,13 @@ export function useDocumentos({ year }: UseDocumentosOptions) {
       
       const documento = documentos.find((d) => d.id === id);
       if (documento?.storagePath) {
-        await incomeDocumentsApi.removeIncomeDocument(year, documento.storagePath);
+        await incomeDocumentsApi.removeIncomeDocument(year, documento.storagePath, clientCpf);
         setDocumentos((prev) => prev.filter((d) => d.id !== id));
       } else {
         setDocumentos((prev) => prev.filter((d) => d.id !== id));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao deletar documento');
-      console.error('Erro ao deletar documento:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -88,21 +114,16 @@ export function useDocumentos({ year }: UseDocumentosOptions) {
         const blob = documentsApi.base64ToBlob(documentData.base64, documentData.mimeType);
         const blobUrl = URL.createObjectURL(blob);
         
-        const newWindow = window.open(blobUrl, '_blank');
+        window.open(blobUrl, '_blank');
         
         setTimeout(() => {
-          if (newWindow) {
-            URL.revokeObjectURL(blobUrl);
-          } else {
-            URL.revokeObjectURL(blobUrl);
-          }
+          URL.revokeObjectURL(blobUrl);
         }, 1000);
       } else {
         const url = `#/documento/${doc.id}`;
         window.open(url, '_blank');
       }
     } catch (error) {
-      console.error('Erro ao visualizar documento:', error);
       alert('Erro ao carregar o documento. Tente novamente.');
     }
   };
