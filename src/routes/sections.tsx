@@ -8,6 +8,7 @@ import ContadorDashboardPage from 'src/pages/contador-dashboard';
 import ContadorClientePage from 'src/pages/contador-cliente';
 import NotFoundPage from 'src/pages/404';
 import { paths } from './paths';
+import { ProtectedRoute, ProtectedRouteBackoffice } from './components';
 
 export default function Router() {
   return useRoutes([
@@ -25,7 +26,11 @@ export default function Router() {
     },
     {
       path: paths.declaracao,
-      element: <DeclaracaoPage />,
+      element: (
+        <ProtectedRoute>
+          <DeclaracaoPage />
+        </ProtectedRoute>
+      ),
     },
     {
       path: paths.contador.login,
@@ -33,11 +38,19 @@ export default function Router() {
     },
     {
       path: paths.contador.dashboard,
-      element: <ContadorDashboardPage />,
+      element: (
+        <ProtectedRouteBackoffice>
+          <ContadorDashboardPage />
+        </ProtectedRouteBackoffice>
+      ),
     },
     {
       path: '/contador/cliente/:clientId',
-      element: <ContadorClientePage />,
+      element: (
+        <ProtectedRouteBackoffice>
+          <ContadorClientePage />
+        </ProtectedRouteBackoffice>
+      ),
     },
     {
       path: paths.page404,
