@@ -63,7 +63,7 @@ export function ModalComentario({
   };
 
   const handleEdit = (coment: Comentario) => {
-    if (!isOwner(coment)) {
+    if (!isOwner()) {
       return;
     }
 
@@ -114,9 +114,7 @@ export function ModalComentario({
     });
   };
 
-  const isOwner = () => {
-    return !!(onEdit || onDelete);
-  };
+  const isOwner = () => !!(onEdit || onDelete);
 
   const isLoading = loading || localLoading;
 
@@ -185,10 +183,10 @@ export function ModalComentario({
                     variant="outlined"
                     sx={{
                       p: 2,
-                      cursor: isOwner(coment) ? 'pointer' : 'default',
+                      cursor: isOwner() ? 'pointer' : 'default',
                       transition: 'all 0.2s',
                       position: 'relative',
-                      '&:hover': isOwner(coment)
+                      '&:hover': isOwner()
                         ? {
                             bgcolor: COLORS.grey100,
                             borderColor: COLORS.primary,
@@ -197,7 +195,7 @@ export function ModalComentario({
                         : {},
                     }}
                     onClick={() => {
-                      if (isOwner(coment) && !editingId && onEdit) {
+                      if (isOwner() && !editingId && onEdit) {
                         handleEdit(coment);
                       }
                     }}
@@ -216,7 +214,7 @@ export function ModalComentario({
                           {coment.texto}
                         </Typography>
                       </Box>
-                      {isOwner(coment) && onDelete ? (
+                      {isOwner() && onDelete ? (
                         <IconButton
                           size="small"
                           onClick={(e) => {
