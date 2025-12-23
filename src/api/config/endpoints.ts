@@ -59,3 +59,35 @@ export const backofficeClientsEndpoints = {
   createAccess: () => '/clients/access',
 };
 
+export const notesEndpoints = {
+  list: (year: number) => `${BASE_PATH}/${year}/notes`,
+  get: (year: number, noteId: string) => `${BASE_PATH}/${year}/notes/${noteId}`,
+  create: (year: number) => `${BASE_PATH}/${year}/notes`,
+  update: (year: number, noteId: string) => `${BASE_PATH}/${year}/notes/${noteId}`,
+  delete: (year: number, noteId: string) => `${BASE_PATH}/${year}/notes/${noteId}`,
+};
+
+export const declarationsEndpoints = {
+  updateStatus: (year: number) => `${BASE_PATH}/${year}/status`,
+};
+
+export const invoicesEndpoints = {
+  list: (clientId: string) => `/invoices/clients/${clientId}`,
+  get: (clientId: string, invoiceId: string) => `/irpf-uploads/clients/${clientId}/${invoiceId}`,
+  upload: () => '/irpf-uploads/upload',
+  listIRPF: (cpf: string) => `/irpf-uploads/clients/${cpf}`,
+};
+
+export const meEndpoints = {
+  profile: () => '/me',
+  invoices: () => '/me/invoices',
+  irpf: () => '/me/irpf-upload',
+};
+
+export const authEndpoints = {
+  authenticateWithPassword: () => '/sessions/password',
+  authenticateWithPhone: () => '/sessions/phone',
+  refreshToken: () => '/sessions/refresh',
+  checkEmail: () => '/auth/check-email',
+};
+

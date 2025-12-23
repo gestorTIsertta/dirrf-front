@@ -10,10 +10,13 @@ export interface GetDocumentResponse {
   base64: string;
 }
 
-export async function getDocument(storagePath: string): Promise<GetDocumentResponse> {
-  const response = await api.post<GetDocumentResponse>(documentsEndpoints.get(), {
-    storagePath,
-  });
+export async function getDocument(storagePath: string, cpf?: string | null): Promise<GetDocumentResponse> {
+  const params = cpf ? { cpf } : {};
+  const response = await api.post<GetDocumentResponse>(
+    documentsEndpoints.get(),
+    { storagePath },
+    { params }
+  );
   return response.data;
 }
 

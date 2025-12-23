@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Paper,
   Stack,
@@ -13,17 +13,25 @@ import {
   Chip,
   Box,
   TablePagination,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
-import { Visibility as VisibilityIcon } from '@mui/icons-material';
-import type { DeclaracaoResumo } from 'src/types/backoffice';
+import {
+  MoreVert as MoreVertIcon,
+  Visibility as VisibilityIcon,
+  Send as SendIcon,
+  Comment as CommentIcon,
+  Assignment as AssignmentIcon,
+} from '@mui/icons-material';
+import type { DeclaracaoResumo, Comentario } from 'src/types/backoffice';
+import { COLORS } from 'src/constants/declaracao';
+import { ModalComentario } from './modal-comentario';
+import { ModalEnviarDeclaracao } from './modal-enviar-declaracao';
+import { ModalStatus } from './modal-status';
+import type { ClientStatus } from 'src/api/requests/backoffice-clients';
 
-const COLORS = {
-  success: '#16A34A',
-  error: '#DC2626',
-  grey200: '#E5E7EB',
-  grey600: '#4B5563',
-  grey800: '#111827',
-};
 
 function chipStatus(status: string) {
   const map: Record<string, { bg: string; color: string }> = {
@@ -38,11 +46,35 @@ function chipStatus(status: string) {
 interface DeclaracoesTableProps {
   declaracoes: DeclaracaoResumo[];
   onViewCliente: (declaracao: DeclaracaoResumo) => void;
+  onEnviarDeclaracao?: (declaracao: DeclaracaoResumo, arquivo: File) => Promise<void>;
+  onAdicionarComentario?: (declaracao: DeclaracaoResumo, comentario: string) => Promise<void>;
+  onEditarComentario?: (declaracao: DeclaracaoResumo, comentarioId: string, comentario: string) => Promise<void>;
+  onExcluirComentario?: (declaracao: DeclaracaoResumo, comentarioId: string) => Promise<void>;
+  getComentarios?: (declaracao: DeclaracaoResumo) => Comentario[];
+  onEditarStatus?: (declaracao: DeclaracaoResumo, status: ClientStatus) => Promise<void>;
+  getClienteStatus?: (declaracao: DeclaracaoResumo) => ClientStatus | undefined;
+  getClienteNome?: (declaracao: DeclaracaoResumo) => string | undefined;
 }
 
-export function DeclaracoesTable({ declaracoes, onViewCliente }: DeclaracoesTableProps) {
+export function DeclaracoesTable({
+  declaracoes,
+  onViewCliente,
+  onEnviarDeclaracao,
+  onAdicionarComentario,
+  onEditarComentario,
+  onExcluirComentario,
+  getComentarios,
+  onEditarStatus,
+  getClienteStatus,
+  getClienteNome,
+}: Readonly<DeclaracoesTableProps>) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedDeclaracao, setSelectedDeclaracao] = useState<DeclaracaoResumo | null>(null);
+  const [modalComentarioOpen, setModalComentarioOpen] = useState(false);
+  const [modalEnviarOpen, setModalEnviarOpen] = useState(false);
+  const [modalStatusOpen, setModalStatusOpen] = useState(false);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -54,6 +86,85 @@ export function DeclaracoesTable({ declaracoes, onViewCliente }: DeclaracoesTabl
   };
 
   const paginatedDeclaracoes = declaracoes.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, declaracao: DeclaracaoResumo) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedDeclaracao(declaracao);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    // Não reseta selectedDeclaracao aqui para manter a referência para os modais
+  };
+
+  const handleVisualizar = () => {
+    if (selectedDeclaracao) {
+      onViewCliente(selectedDeclaracao);
+    }
+    setAnchorEl(null);
+    setSelectedDeclaracao(null);
+  };
+
+  const handleEnviarDeclaracao = () => {
+    setModalEnviarOpen(true);
+    setAnchorEl(null);
+    // Mantém selectedDeclaracao para o modal
+  };
+
+  const handleAdicionarComentario = () => {
+    // Garante que selectedDeclaracao está definido antes de abrir o modal
+    if (selectedDeclaracao) {
+      setModalComentarioOpen(true);
+    }
+    setAnchorEl(null);
+    // Mantém selectedDeclaracao para o modal
+  };
+
+  const handleEditarStatus = () => {
+    if (selectedDeclaracao) {
+      setModalStatusOpen(true);
+    }
+    setAnchorEl(null);
+    // Mantém selectedDeclaracao para o modal
+  };
+
+  const handleSubmitEnviar = async (arquivo: File) => {
+    if (selectedDeclaracao && onEnviarDeclaracao) {
+      await onEnviarDeclaracao(selectedDeclaracao, arquivo);
+    }
+  };
+
+  const handleSubmitComentario = async (comentario: string) => {
+    if (selectedDeclaracao && onAdicionarComentario) {
+      await onAdicionarComentario(selectedDeclaracao, comentario);
+    }
+  };
+
+  const handleEditComentario = async (id: string, comentario: string) => {
+    if (selectedDeclaracao && onEditarComentario) {
+      await onEditarComentario(selectedDeclaracao, id, comentario);
+    }
+  };
+
+  const handleDeleteComentario = async (id: string) => {
+    if (selectedDeclaracao && onExcluirComentario) {
+      await onExcluirComentario(selectedDeclaracao, id);
+    }
+  };
+
+  const handleSubmitStatus = async (status: ClientStatus) => {
+    if (selectedDeclaracao && onEditarStatus) {
+      await onEditarStatus(selectedDeclaracao, status);
+    }
+  };
+
+  // Recalcula os comentários sempre que selectedDeclaracao ou modalComentarioOpen mudar
+  const comentariosAtuais = useMemo(() => {
+    if (selectedDeclaracao && getComentarios) {
+      return getComentarios(selectedDeclaracao);
+    }
+    return [];
+  }, [selectedDeclaracao, getComentarios]);
 
   return (
     <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 4, overflow: 'hidden' }}>
@@ -197,14 +308,14 @@ export function DeclaracoesTable({ declaracoes, onViewCliente }: DeclaracoesTabl
                     )}
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton 
-                      size="small" 
-                      onClick={() => onViewCliente(d)}
-                      sx={{ 
-                        padding: { xs: '4px', sm: '8px' }
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleMenuOpen(e, d)}
+                      sx={{
+                        padding: { xs: '4px', sm: '8px' },
                       }}
                     >
-                      <VisibilityIcon fontSize="small" />
+                      <MoreVertIcon fontSize="small" />
                     </IconButton>
                   </TableCell>
                 </TableRow>
@@ -224,7 +335,10 @@ export function DeclaracoesTable({ declaracoes, onViewCliente }: DeclaracoesTabl
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         labelRowsPerPage="Linhas por página:"
-        labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`}
+        labelDisplayedRows={({ from, to, count }) => {
+          const total = count === -1 ? `mais de ${to}` : count;
+          return `${from}-${to} de ${total}`;
+        }}
         sx={{
           borderTop: '1px solid',
           borderColor: 'divider',
@@ -242,6 +356,86 @@ export function DeclaracoesTable({ declaracoes, onViewCliente }: DeclaracoesTabl
           },
         }}
       />
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={handleVisualizar}>
+          <ListItemIcon>
+            <VisibilityIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Visualizar</ListItemText>
+        </MenuItem>
+        {onEditarStatus && (
+          <MenuItem onClick={handleEditarStatus}>
+            <ListItemIcon>
+              <AssignmentIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Editar Status</ListItemText>
+          </MenuItem>
+        )}
+        {onEnviarDeclaracao && (
+          <MenuItem onClick={handleEnviarDeclaracao}>
+            <ListItemIcon>
+              <SendIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Enviar declaração</ListItemText>
+          </MenuItem>
+        )}
+        {onAdicionarComentario && (
+          <MenuItem onClick={handleAdicionarComentario}>
+            <ListItemIcon>
+              <CommentIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Deixar comentário</ListItemText>
+          </MenuItem>
+        )}
+      </Menu>
+
+      {onAdicionarComentario && selectedDeclaracao && (
+        <ModalComentario
+          open={modalComentarioOpen}
+          onClose={() => {
+            setModalComentarioOpen(false);
+            setSelectedDeclaracao(null);
+          }}
+          onSubmit={handleSubmitComentario}
+          onEdit={onEditarComentario ? handleEditComentario : undefined}
+          onDelete={onExcluirComentario ? handleDeleteComentario : undefined}
+          comentarios={comentariosAtuais}
+        />
+      )}
+
+      {onEnviarDeclaracao && (
+        <ModalEnviarDeclaracao
+          open={modalEnviarOpen}
+          onClose={() => setModalEnviarOpen(false)}
+          onSubmit={handleSubmitEnviar}
+        />
+      )}
+
+      {onEditarStatus && selectedDeclaracao && (
+        <ModalStatus
+          open={modalStatusOpen}
+          onClose={() => {
+            setModalStatusOpen(false);
+            setSelectedDeclaracao(null);
+          }}
+          onSubmit={handleSubmitStatus}
+          currentStatus={getClienteStatus ? getClienteStatus(selectedDeclaracao) : undefined}
+          clienteNome={getClienteNome ? getClienteNome(selectedDeclaracao) : undefined}
+        />
+      )}
     </Paper>
   );
 }

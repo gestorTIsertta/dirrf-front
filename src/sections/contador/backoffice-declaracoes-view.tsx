@@ -22,9 +22,10 @@ import {
 } from '@mui/icons-material';
 import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
-import type { DeclaracaoResumo } from 'src/types/backoffice';
-import { listClientsByResponsible } from 'src/api/requests/backoffice-clients';
+import type { DeclaracaoResumo, Comentario } from 'src/types/backoffice';
+import { listClientsByResponsible, updateClient, type Client, type ClientStatus } from 'src/api/requests/backoffice-clients';
 import { enqueueSnackbar } from 'notistack';
+import { authBackoffice } from 'src/config-firebase-backoffice';
 import { PageHeader, SummaryCardsGrid, DeclaracoesTable, type SummaryCardData } from 'src/components/contador';
 
 const COLORS = {
@@ -52,6 +53,7 @@ export default function BackofficeDeclaracoesView() {
   const [selectedYear, setSelectedYear] = useState('2024');
   const [loading, setLoading] = useState(true);
   const [declaracoes, setDeclaracoes] = useState<DeclaracaoResumo[]>([]);
+  const [clientsMap, setClientsMap] = useState<Record<string, Client>>({});
   const [cardsResumo, setCardsResumo] = useState<SummaryCardData[]>([
     { 
       label: 'Total de declarações', 
@@ -105,6 +107,181 @@ export default function BackofficeDeclaracoesView() {
     router.push(`${paths.declaracao}?cpf=${clientCpf}`);
   };
 
+  const handleEnviarDeclaracao = async (_declaracao: DeclaracaoResumo, _arquivo: File) => {
+    enqueueSnackbar('Funcionalidade de envio de declaração em desenvolvimento', { variant: 'info' });
+  };
+
+  const comentariosIniciais: Comentario[] = [
+    {
+      id: '1',
+      texto: 'Documento "Escritura_Apartamento.pdf" aprovado e vinculado ao item de declaração.',
+      autorNome: 'Rafael Silva',
+      autorEmail: 'rafael.silva@exemplo.com',
+      data: new Date(2024, 2, 20, 14, 35).toISOString(),
+      createdAt: new Date(2024, 2, 20, 14, 35).toISOString(),
+    },
+    {
+      id: '2',
+      texto: 'Valor de "Rendimentos de trabalho assalariado" alterado de R$ 120.000,00 para R$ 125.450,00',
+      autorNome: 'Rafael Silva',
+      autorEmail: 'rafael.silva@exemplo.com',
+      data: new Date(2024, 2, 19, 16, 20).toISOString(),
+      createdAt: new Date(2024, 2, 19, 16, 20).toISOString(),
+    },
+    {
+      id: '3',
+      texto: 'Mensagem enviada ao cliente solicitando esclarecimento sobre compra de veículo.',
+      autorNome: 'Rafael Silva',
+      autorEmail: 'rafael.silva@exemplo.com',
+      data: new Date(2024, 2, 18, 10, 15).toISOString(),
+      createdAt: new Date(2024, 2, 18, 10, 15).toISOString(),
+    },
+    {
+      id: '4',
+      texto: 'Cliente enviou 3 novos documentos para análise.',
+      autorNome: 'Cliente',
+      autorEmail: 'cliente@exemplo.com',
+      data: new Date(2024, 2, 15, 9, 45).toISOString(),
+      createdAt: new Date(2024, 2, 15, 9, 45).toISOString(),
+    },
+    {
+      id: '5',
+      texto: 'Declaração criada para o ano-calendário 2024.',
+      autorNome: 'Rafael Silva',
+      autorEmail: 'rafael.silva@exemplo.com',
+      data: new Date(2024, 2, 10, 11, 30).toISOString(),
+      createdAt: new Date(2024, 2, 10, 11, 30).toISOString(),
+    },
+  ];
+
+  const [comentariosMap, setComentariosMap] = useState<Record<string, Comentario[]>>({});
+
+  const handleAdicionarComentario = async (declaracao: DeclaracaoResumo, comentario: string) => {
+    const user = authBackoffice.currentUser;
+    const autorNome = user?.displayName || user?.email?.split('@')[0] || 'Usuário';
+    const autorEmail = user?.email || '';
+    
+    const novoComentario: Comentario = {
+      id: Date.now().toString(),
+      texto: comentario,
+      autorNome,
+      autorEmail,
+      data: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+    
+    setComentariosMap((prev) => ({
+      ...prev,
+      [declaracao.id]: [...(prev[declaracao.id] || []), novoComentario],
+    }));
+    
+    enqueueSnackbar('Comentário adicionado com sucesso', { variant: 'success' });
+  };
+
+  const handleEditarComentario = async (declaracao: DeclaracaoResumo, comentarioId: string, comentario: string) => {
+    setComentariosMap((prev) => ({
+      ...prev,
+      [declaracao.id]: (prev[declaracao.id] || []).map((c) =>
+        c.id === comentarioId ? { ...c, texto: comentario } : c
+      ),
+    }));
+    
+    enqueueSnackbar('Comentário editado com sucesso', { variant: 'success' });
+  };
+
+  const handleExcluirComentario = async (declaracao: DeclaracaoResumo, comentarioId: string) => {
+    setComentariosMap((prev) => ({
+      ...prev,
+      [declaracao.id]: (prev[declaracao.id] || []).filter((c) => c.id !== comentarioId),
+    }));
+    
+    enqueueSnackbar('Comentário excluído com sucesso', { variant: 'success' });
+  };
+
+  const getComentarios = (declaracao: DeclaracaoResumo): Comentario[] => {
+    return comentariosMap[declaracao.id] || [];
+  };
+
+  const handleEditarStatus = async (declaracao: DeclaracaoResumo, status: ClientStatus) => {
+    try {
+      const clientCpf = declaracao.cpf.replace(/\D/g, '');
+      if (!clientCpf || clientCpf.length < 11) {
+        enqueueSnackbar('CPF inválido', { variant: 'error' });
+        return;
+      }
+
+      await updateClient(clientCpf, { status });
+      
+      // Atualizar o mapa de clientes
+      setClientsMap((prev) => {
+        const client = prev[clientCpf];
+        if (client) {
+          return {
+            ...prev,
+            [clientCpf]: {
+              ...client,
+              status,
+            },
+          };
+        }
+        return prev;
+      });
+
+      // Atualizar também o status na lista de declarações (UI)
+      setDeclaracoes((prev) =>
+        prev.map((d) => {
+          if (d.id === declaracao.id) {
+            return {
+              ...d,
+              status: mapAPIStatusToUIStatus(status),
+            };
+          }
+          return d;
+        })
+      );
+
+      enqueueSnackbar('Status atualizado com sucesso', { variant: 'success' });
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      const errorMessage = axiosError?.response?.data?.message || axiosError?.message || 'Erro ao atualizar status';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+      throw error;
+    }
+  };
+
+  // Função para mapear status da UI para status da API
+  const mapUIStatusToAPIStatus = (uiStatus: string): ClientStatus => {
+    if (uiStatus === 'Em preenchimento') return 'Em Preenchimento';
+    if (uiStatus === 'Aguardando conferência') return 'Em análise';
+    if (uiStatus === 'Enviado à Receita' || uiStatus === 'Finalizado') return 'Aprovado';
+    return 'Em Preenchimento'; // Default
+  };
+
+  // Função para mapear status da API para status da UI
+  const mapAPIStatusToUIStatus = (apiStatus?: ClientStatus): 'Em preenchimento' | 'Aguardando conferência' | 'Enviado à Receita' | 'Finalizado' => {
+    if (apiStatus === 'Em Preenchimento') return 'Em preenchimento';
+    if (apiStatus === 'Em análise') return 'Aguardando conferência';
+    if (apiStatus === 'Aprovado') return 'Finalizado';
+    return 'Em preenchimento'; // Default
+  };
+
+  const getClienteStatus = (declaracao: DeclaracaoResumo): ClientStatus | undefined => {
+    const clientCpf = declaracao.cpf.replace(/\D/g, '');
+    const client = clientsMap[clientCpf];
+    // Se o cliente tem status na API, usa ele. Caso contrário, mapeia o status da UI.
+    if (client?.status) {
+      return client.status;
+    }
+    // Fallback: mapeia o status da UI para o status da API
+    return mapUIStatusToAPIStatus(declaracao.status);
+  };
+
+  const getClienteNome = (declaracao: DeclaracaoResumo): string | undefined => {
+    const clientCpf = declaracao.cpf.replace(/\D/g, '');
+    const client = clientsMap[clientCpf];
+    return client?.name;
+  };
+
   useEffect(() => {
     let isMounted = true; // Flag para evitar atualizações se o componente foi desmontado
     
@@ -114,33 +291,78 @@ export default function BackofficeDeclaracoesView() {
         const response = await listClientsByResponsible({
           page: 1,
           limit: 100, // Buscar muitos clientes para o dashboard
+          anoExercicio: parseInt(selectedYear),
         });
 
         // Só atualiza o estado se o componente ainda estiver montado
         if (!isMounted) return;
 
-        // Transformar clientes em declarações (mockado pois não temos dados de declaração ainda)
-        // TODO: Quando o backend tiver endpoint de declarações, usar dados reais
+        // Armazenar clientes em um mapa para acesso rápido
+        const clientsMapData: Record<string, Client> = {};
+        response.clients.forEach(client => {
+          clientsMapData[client.id] = client;
+        });
+        setClientsMap(clientsMapData);
+
         const declaracoesData: DeclaracaoResumo[] = response.clients
           .filter(client => client.type === 'PF') // Apenas pessoas físicas por enquanto
-          .map((client, index) => ({
-            id: client.id,
-            nome: client.name,
-            cpf: client.documentFormatted || formatCPF(client.document),
-            status: (['Em preenchimento', 'Aguardando conferência', 'Enviado à Receita', 'Finalizado'] as const)[
-              index % 4
-            ],
-            ano: parseInt(selectedYear),
-            resultado: 'A calcular', // TODO: Buscar da declaração quando endpoint existir
-            resultadoTipo: 'pagar' as const,
-            dataEnvio: client.lastInvoiceDate 
-              ? new Date(client.lastInvoiceDate).toLocaleDateString('pt-BR')
-              : 'Não enviado',
-            responsavel: client.email || 'Não atribuído',
-            pendencias: '0 itens', // TODO: Calcular quando endpoint existir
-          }));
+          .map((client) => {
+            // Mapear o status do backend para o formato esperado na UI
+            let statusUI: 'Em preenchimento' | 'Aguardando conferência' | 'Enviado à Receita' | 'Finalizado';
+            if (client.status === 'Em Preenchimento') {
+              statusUI = 'Em preenchimento';
+            } else if (client.status === 'Em análise') {
+              statusUI = 'Aguardando conferência';
+            } else if (client.status === 'Aprovado') {
+              statusUI = 'Finalizado';
+            } else {
+              statusUI = 'Em preenchimento'; // Default
+            }
+
+            return {
+              id: client.id,
+              nome: client.name,
+              cpf: client.documentFormatted || formatCPF(client.document),
+              status: statusUI,
+              ano: parseInt(selectedYear),
+              resultado: 'A calcular',
+              resultadoTipo: 'pagar' as const,
+              dataEnvio: client.lastInvoiceDate 
+                ? new Date(client.lastInvoiceDate).toLocaleDateString('pt-BR')
+                : 'Não enviado',
+              responsavel: client.email || 'Não atribuído',
+              pendencias: '0 itens',
+            };
+          });
 
         setDeclaracoes(declaracoesData);
+        
+        if (declaracoesData.length > 0) {
+          setComentariosMap((prev) => {
+            const novo = { ...prev };
+            if (declaracoesData[0]) {
+              const primeiroId = declaracoesData[0].id;
+              if (!novo[primeiroId] || novo[primeiroId].length === 0) {
+                novo[primeiroId] = [...comentariosIniciais];
+              }
+            }
+            declaracoesData.slice(1, 3).forEach((decl, index) => {
+              if (!novo[decl.id] || novo[decl.id].length === 0) {
+                novo[decl.id] = [
+                  {
+                    id: `mock-${decl.id}-1`,
+                    texto: `Comentário para ${decl.nome}. Status atual: ${decl.status}`,
+                    autorNome: 'Rafael Silva',
+                    autorEmail: 'rafael.silva@exemplo.com',
+                    data: new Date(Date.now() - (index + 1) * 24 * 60 * 60 * 1000).toISOString(),
+                    createdAt: new Date(Date.now() - (index + 1) * 24 * 60 * 60 * 1000).toISOString(),
+                  },
+                ];
+              }
+            });
+            return novo;
+          });
+        }
 
         const total = declaracoesData.length;
         const emPreenchimento = declaracoesData.filter(d => d.status === 'Em preenchimento').length;
@@ -276,6 +498,7 @@ export default function BackofficeDeclaracoesView() {
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(e.target.value)}
                 >
+                  <MenuItem value="2025">2025</MenuItem>
                   <MenuItem value="2024">2024</MenuItem>
                   <MenuItem value="2023">2023</MenuItem>
                 </Select>
@@ -286,7 +509,18 @@ export default function BackofficeDeclaracoesView() {
 
         <SummaryCardsGrid cards={cardsResumo} />
 
-        <DeclaracoesTable declaracoes={declaracoes} onViewCliente={handleViewCliente} />
+        <DeclaracoesTable
+          declaracoes={declaracoes}
+          onViewCliente={handleViewCliente}
+          onEnviarDeclaracao={handleEnviarDeclaracao}
+          onAdicionarComentario={handleAdicionarComentario}
+          onEditarComentario={handleEditarComentario}
+          onExcluirComentario={handleExcluirComentario}
+          getComentarios={getComentarios}
+          onEditarStatus={handleEditarStatus}
+          getClienteStatus={getClienteStatus}
+          getClienteNome={getClienteNome}
+        />
       </Container>
     </Box>
   );

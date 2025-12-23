@@ -49,6 +49,16 @@ export interface HistoricoItem {
   texto: string;
 }
 
+export interface Comentario {
+  id: string;
+  texto: string;
+  autorNome: string;
+  autorEmail: string;
+  data: string;
+  createdAt: string;
+}
+
+
 
 
 

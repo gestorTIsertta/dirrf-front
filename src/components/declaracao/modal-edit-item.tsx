@@ -313,7 +313,7 @@ export function ModalEditItem({
                         <IconButton
                           size="small"
                           onClick={() => handleRemoveComprovanteExistente(index)}
-                          sx={{ color: COLORS.error }}
+                          sx={{ color: COLORS.primary }}
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>

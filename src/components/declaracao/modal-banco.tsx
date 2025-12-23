@@ -270,7 +270,7 @@ export function ModalBanco({
                     <IconButton
                       size="small"
                       onClick={handleRemoveInformeExistente}
-                      sx={{ color: COLORS.error }}
+                      sx={{ color: COLORS.primary }}
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
