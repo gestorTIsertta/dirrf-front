@@ -164,7 +164,7 @@ export default function DeclaracaoView() {
 
         <ItensTable ref={itensTableRef} year={year} bancos={bancos} />
 
-        <ChecklistSection />
+        <ChecklistSection year={year} />
 
         <TimelineSection />
 

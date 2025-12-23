@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Paper,
   Stack,
@@ -30,15 +30,16 @@ import { COLORS } from 'src/constants/declaracao';
 import { ModalComentario } from './modal-comentario';
 import { ModalEnviarDeclaracao } from './modal-enviar-declaracao';
 import { ModalStatus } from './modal-status';
-import type { ClientStatus } from 'src/api/requests/backoffice-clients';
+import type { DeclarationStatus } from 'src/types/backoffice';
 
 
 function chipStatus(status: string) {
   const map: Record<string, { bg: string; color: string }> = {
-    'Em preenchimento': { bg: '#FEF3C7', color: '#92400E' },
-    'Aguardando conferência': { bg: '#FFEDD5', color: '#C2410C' },
-    'Enviado à Receita': { bg: '#DBEAFE', color: '#1D4ED8' },
-    'Finalizado': { bg: '#DCFCE7', color: '#166534' },
+    'pendente': { bg: '#FEF3C7', color: '#92400E' },
+    'em_analise': { bg: '#FFEDD5', color: '#C2410C' },
+    'aprovada': { bg: '#DCFCE7', color: '#166534' },
+    'rejeitada': { bg: '#FEE2E2', color: '#DC2626' },
+    'concluida': { bg: '#DCFCE7', color: '#166534' },
   };
   return map[status] || { bg: COLORS.grey200, color: COLORS.grey800 };
 }
@@ -51,8 +52,10 @@ interface DeclaracoesTableProps {
   onEditarComentario?: (declaracao: DeclaracaoResumo, comentarioId: string, comentario: string) => Promise<void>;
   onExcluirComentario?: (declaracao: DeclaracaoResumo, comentarioId: string) => Promise<void>;
   getComentarios?: (declaracao: DeclaracaoResumo) => Comentario[];
-  onEditarStatus?: (declaracao: DeclaracaoResumo, status: ClientStatus) => Promise<void>;
-  getClienteStatus?: (declaracao: DeclaracaoResumo) => ClientStatus | undefined;
+  onLoadComentarios?: (declaracao: DeclaracaoResumo) => Promise<void>;
+  getLoadingComentarios?: (declaracao: DeclaracaoResumo) => boolean;
+  onEditarStatus?: (declaracao: DeclaracaoResumo, status: DeclarationStatus) => Promise<void>;
+  getClienteStatus?: (declaracao: DeclaracaoResumo) => DeclarationStatus | undefined;
   getClienteNome?: (declaracao: DeclaracaoResumo) => string | undefined;
 }
 
@@ -64,6 +67,8 @@ export function DeclaracoesTable({
   onEditarComentario,
   onExcluirComentario,
   getComentarios,
+  onLoadComentarios,
+  getLoadingComentarios,
   onEditarStatus,
   getClienteStatus,
   getClienteNome,
@@ -94,7 +99,6 @@ export function DeclaracoesTable({
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-    // Não reseta selectedDeclaracao aqui para manter a referência para os modais
   };
 
   const handleVisualizar = () => {
@@ -108,16 +112,13 @@ export function DeclaracoesTable({
   const handleEnviarDeclaracao = () => {
     setModalEnviarOpen(true);
     setAnchorEl(null);
-    // Mantém selectedDeclaracao para o modal
   };
 
   const handleAdicionarComentario = () => {
-    // Garante que selectedDeclaracao está definido antes de abrir o modal
     if (selectedDeclaracao) {
       setModalComentarioOpen(true);
     }
     setAnchorEl(null);
-    // Mantém selectedDeclaracao para o modal
   };
 
   const handleEditarStatus = () => {
@@ -125,7 +126,6 @@ export function DeclaracoesTable({
       setModalStatusOpen(true);
     }
     setAnchorEl(null);
-    // Mantém selectedDeclaracao para o modal
   };
 
   const handleSubmitEnviar = async (arquivo: File) => {
@@ -152,19 +152,33 @@ export function DeclaracoesTable({
     }
   };
 
-  const handleSubmitStatus = async (status: ClientStatus) => {
+  const handleSubmitStatus = async (status: DeclarationStatus) => {
     if (selectedDeclaracao && onEditarStatus) {
       await onEditarStatus(selectedDeclaracao, status);
     }
   };
 
-  // Recalcula os comentários sempre que selectedDeclaracao ou modalComentarioOpen mudar
+  useEffect(() => {
+    if (modalComentarioOpen && selectedDeclaracao && onLoadComentarios) {
+      onLoadComentarios(selectedDeclaracao).catch((error) => {
+        console.error('Erro ao carregar comentários:', error);
+      });
+    }
+  }, [modalComentarioOpen, selectedDeclaracao, onLoadComentarios]);
+
   const comentariosAtuais = useMemo(() => {
     if (selectedDeclaracao && getComentarios) {
       return getComentarios(selectedDeclaracao);
     }
     return [];
   }, [selectedDeclaracao, getComentarios]);
+
+  const loadingComentarios = useMemo(() => {
+    if (selectedDeclaracao && getLoadingComentarios) {
+      return getLoadingComentarios(selectedDeclaracao);
+    }
+    return false;
+  }, [selectedDeclaracao, getLoadingComentarios]);
 
   return (
     <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 4, overflow: 'hidden' }}>
@@ -413,6 +427,7 @@ export function DeclaracoesTable({
           onEdit={onEditarComentario ? handleEditComentario : undefined}
           onDelete={onExcluirComentario ? handleDeleteComentario : undefined}
           comentarios={comentariosAtuais}
+          loading={loadingComentarios}
         />
       )}
 

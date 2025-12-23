@@ -1,7 +1,15 @@
 import api from 'src/api/config/api';
 import { backofficeClientsEndpoints } from 'src/api/config/endpoints';
+import type { DeclarationStatus } from './declarations';
 
 export type ClientStatus = 'Em Preenchimento' | 'Em análise' | 'Aprovado';
+
+export interface ClientDeclaration {
+  anoExercicio: number;
+  status: DeclarationStatus;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface Client {
   id: string; // CPF ou CNPJ sem formatação
@@ -23,6 +31,7 @@ export interface Client {
   updatedAt: string;
   active: boolean;
   archived: boolean;
+  declaracao?: ClientDeclaration; // Incluído quando vem de listClientsByResponsible
 }
 
 export interface ListClientsResponse {
@@ -69,7 +78,6 @@ export async function listClients(params?: ListClientsParams): Promise<ListClien
 }
 
 export async function listClientsByResponsible(params?: ListClientsParams): Promise<ListClientsResponse> {
-  // Remove valores undefined para evitar problemas no backend
   const cleanParams = params
     ? Object.fromEntries(
         Object.entries(params).filter(([, value]) => value !== undefined && value !== null)
@@ -121,5 +129,3 @@ export async function createClientAccess(
   );
   return response.data;
 }
-
-

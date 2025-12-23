@@ -1,8 +1,10 @@
+export type DeclarationStatus = 'pendente' | 'em_analise' | 'aprovada' | 'rejeitada' | 'concluida';
+
 export interface DeclaracaoResumo {
   id: string;
   nome: string;
   cpf: string;
-  status: 'Em preenchimento' | 'Aguardando conferência' | 'Enviado à Receita' | 'Finalizado';
+  status: DeclarationStatus;
   ano: number;
   resultado: string;
   resultadoTipo: 'pagar' | 'restituir';
@@ -57,8 +59,5 @@ export interface Comentario {
   data: string;
   createdAt: string;
 }
-
-
-
 
 

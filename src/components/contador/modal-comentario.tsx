@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -15,7 +15,6 @@ import {
   IconButton,
 } from '@mui/material';
 import { Lock as LockIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { authBackoffice } from 'src/config-firebase-backoffice';
 import { COLORS } from 'src/constants/declaracao';
 import type { Comentario } from 'src/types/backoffice';
 
@@ -41,31 +40,6 @@ export function ModalComentario({
   const [comentario, setComentario] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [localLoading, setLocalLoading] = useState(false);
-  const [_usuarioLogado, setUsuarioLogado] = useState<{
-    email: string;
-    displayName: string | null;
-  } | null>(null);
-
-  useEffect(() => {
-    if (open) {
-      const user = authBackoffice.currentUser;
-      if (user) {
-        const nome = user.displayName || user.email?.split('@')[0] || 'Usuário';
-        const email = user.email || '';
-        setUsuarioLogado({
-          email: email.toLowerCase(),
-          displayName: nome,
-        });
-      } else {
-        setUsuarioLogado({
-          email: 'rafael.silva@exemplo.com',
-          displayName: 'Usuário',
-        });
-      }
-    } else {
-      setUsuarioLogado(null);
-    }
-  }, [open]);
 
   const handleSubmit = async () => {
     if (!comentario.trim()) {
@@ -82,7 +56,7 @@ export function ModalComentario({
       }
       setComentario('');
     } catch (error) {
-      // Erro silencioso - pode ser tratado pelo componente pai se necessário
+      // ignore
     } finally {
       setLocalLoading(false);
     }
@@ -116,7 +90,7 @@ export function ModalComentario({
       try {
         await onDelete(id);
       } catch (error) {
-        // Erro silencioso - pode ser tratado pelo componente pai se necessário
+        // ignore
       }
     }
   };
@@ -140,11 +114,8 @@ export function ModalComentario({
     });
   };
 
-  const isOwner = (_coment: Comentario) => {
-    if (onEdit || onDelete) {
-      return true;
-    }
-    return false;
+  const isOwner = () => {
+    return !!(onEdit || onDelete);
   };
 
   const isLoading = loading || localLoading;
@@ -198,7 +169,11 @@ export function ModalComentario({
             )}
           </Box>
 
-          {comentarios.length > 0 && (
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={32} />
+            </Box>
+          ) : comentarios.length > 0 ? (
             <Box>
               <Typography variant="body2" fontWeight={600} mb={2}>
                 Comentários anteriores
@@ -267,7 +242,7 @@ export function ModalComentario({
                 ))}
               </Stack>
             </Box>
-          )}
+          ) : null}
         </Stack>
       </DialogContent>
       <Divider />

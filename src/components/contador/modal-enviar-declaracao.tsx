@@ -50,7 +50,7 @@ export function ModalEnviarDeclaracao({
       }
       onClose();
     } catch (error) {
-      // Erro silencioso - pode ser tratado pelo componente pai se necessário
+      // ignore
     } finally {
       setLocalLoading(false);
     }

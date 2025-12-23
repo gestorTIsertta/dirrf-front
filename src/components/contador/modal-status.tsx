@@ -13,13 +13,13 @@ import {
 } from '@mui/material';
 import { COLORS } from 'src/constants/declaracao';
 import { StatusSelect } from './status-select';
-import type { ClientStatus } from 'src/api/requests/backoffice-clients';
+import type { DeclarationStatus } from 'src/types/backoffice';
 
 interface ModalStatusProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (status: ClientStatus) => Promise<void>;
-  currentStatus?: ClientStatus;
+  onSubmit: (status: DeclarationStatus) => Promise<void>;
+  currentStatus?: DeclarationStatus;
   clienteNome?: string;
   loading?: boolean;
 }
@@ -32,7 +32,7 @@ export function ModalStatus({
   clienteNome,
   loading = false,
 }: Readonly<ModalStatusProps>) {
-  const [status, setStatus] = useState<ClientStatus | undefined>(currentStatus);
+  const [status, setStatus] = useState<DeclarationStatus | undefined>(currentStatus);
   const [localLoading, setLocalLoading] = useState(false);
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export function ModalStatus({
       await onSubmit(status);
       handleClose();
     } catch (error) {
-      // Erro silencioso - pode ser tratado pelo componente pai se necessário
+      // ignore
     } finally {
       setLocalLoading(false);
     }
@@ -145,5 +145,3 @@ export function ModalStatus({
     </Dialog>
   );
 }
-
-

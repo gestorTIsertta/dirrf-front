@@ -7,20 +7,22 @@ import {
   Typography,
 } from '@mui/material';
 import { COLORS } from 'src/constants/declaracao';
-import type { ClientStatus } from 'src/api/requests/backoffice-clients';
+import type { DeclarationStatus } from 'src/types/backoffice';
 
 interface StatusSelectProps {
-  value: ClientStatus | undefined;
-  onChange: (status: ClientStatus) => void;
+  value: DeclarationStatus | undefined;
+  onChange: (status: DeclarationStatus) => void;
   disabled?: boolean;
   size?: 'small' | 'medium';
 }
 
-function getStatusColors(status: ClientStatus) {
-  const map: Record<ClientStatus, { bg: string; color: string }> = {
-    'Em Preenchimento': { bg: '#FEE2E2', color: '#DC2626' },
-    'Em análise': { bg: '#FEF3C7', color: '#D97706' },
-    'Aprovado': { bg: '#DCFCE7', color: '#16A34A' },
+function getStatusColors(status: DeclarationStatus) {
+  const map: Record<DeclarationStatus, { bg: string; color: string }> = {
+    'pendente': { bg: '#FEF3C7', color: '#92400E' },
+    'em_analise': { bg: '#FFEDD5', color: '#C2410C' },
+    'aprovada': { bg: '#DCFCE7', color: '#166534' },
+    'rejeitada': { bg: '#FEE2E2', color: '#DC2626' },
+    'concluida': { bg: '#DCFCE7', color: '#166534' },
   };
   return map[status];
 }
@@ -31,13 +33,13 @@ export function StatusSelect({
   disabled = false,
   size = 'medium',
 }: Readonly<StatusSelectProps>) {
-  const statusOptions: ClientStatus[] = ['Em Preenchimento', 'Em análise', 'Aprovado'];
+  const statusOptions: DeclarationStatus[] = ['pendente', 'em_analise', 'aprovada', 'rejeitada', 'concluida'];
 
   return (
     <FormControl fullWidth size={size} disabled={disabled}>
       <Select
         value={value || ''}
-        onChange={(e) => onChange(e.target.value as ClientStatus)}
+        onChange={(e) => onChange(e.target.value as DeclarationStatus)}
         displayEmpty
         sx={{
           '& .MuiSelect-select': {
@@ -54,7 +56,7 @@ export function StatusSelect({
               </Typography>
             );
           }
-          const status = selected as ClientStatus;
+          const status = selected as DeclarationStatus;
           const colors = getStatusColors(status);
           return (
             <Chip

@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { auth } from 'src/config-firebase';
 import { authBackoffice } from 'src/config-firebase-backoffice';
+import { paths } from 'src/routes/paths';
 
 const baseURL = import.meta.env.VITE_BASE_URL_API || '';
 
@@ -22,6 +23,21 @@ function hasCpfInQuery(url?: string): boolean {
   return params.has('cpf') || params.has('clientCpf');
 }
 
+function handle401Redirect(url?: string): void {
+  if (window.location.pathname === paths.contador.login || window.location.pathname === paths.auth.login) {
+    return;
+  }
+
+  const isBackoffice = isBackofficeRoute(url);
+  const hasCpf = hasCpfInQuery(url);
+
+  if (isBackoffice || hasCpf) {
+    window.location.href = paths.contador.login;
+  } else {
+    window.location.href = paths.auth.login;
+  }
+}
+
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
@@ -29,7 +45,6 @@ api.interceptors.request.use(
       const hasCpf = hasCpfInQuery(config.url);
       
       if (isBackoffice) {
-        // Rotas de backoffice sempre usam Firebase Backoffice
         await authBackoffice.authStateReady();
         const user = authBackoffice.currentUser;
 
@@ -40,12 +55,10 @@ api.interceptors.request.use(
               config.headers.Authorization = `Bearer ${token}`;
             }
           } catch (tokenError) {
-            // Não adiciona token se houver erro, deixa a requisição falhar
+            // ignore
           }
         }
       } else if (hasCpf) {
-        // Rotas IRPF com CPF na query → Contador acessando declaração do cliente
-        // Usar token do Firebase Backoffice (contador está logado lá)
         await authBackoffice.authStateReady();
         const user = authBackoffice.currentUser;
 
@@ -53,7 +66,6 @@ api.interceptors.request.use(
           const token = await user.getIdToken();
           if (config.headers) config.headers.Authorization = `Bearer ${token}`;
         } else {
-          // Fallback: tentar usar token normal se backoffice não estiver logado
           await auth.authStateReady();
           const userNormal = auth.currentUser;
           if (userNormal) {
@@ -62,8 +74,6 @@ api.interceptors.request.use(
           }
         }
       } else {
-        // Rotas IRPF sem CPF na query → Cliente normal acessando
-        // Usar Firebase normal
         await auth.authStateReady();
         const user = auth.currentUser;
 
@@ -71,7 +81,6 @@ api.interceptors.request.use(
           const token = await user.getIdToken();
           if (config.headers) config.headers.Authorization = `Bearer ${token}`;
         } else {
-          // Fallback: tentar usar token do backoffice se normal não estiver logado
           await authBackoffice.authStateReady();
           const userBackoffice = authBackoffice.currentUser;
           if (userBackoffice) {
@@ -81,7 +90,7 @@ api.interceptors.request.use(
         }
       }
     } catch (error: unknown) {
-      // Erro silencioso - a requisição pode falhar normalmente
+      // ignore
     }
 
     if (config.headers && !(config.data instanceof FormData)) {
@@ -119,13 +128,12 @@ api.interceptors.response.use(
       const requestKey = getRequestKey(error.config);
       const retryCount = retryCountMap.get(requestKey) || 0;
 
-      // Evita loop infinito: só tenta renovar token uma vez
       if (retryCount >= MAX_RETRY_ATTEMPTS) {
         retryCountMap.delete(requestKey);
-        return Promise.reject(error);
+        handle401Redirect(error.config?.url);
+        throw error;
       }
 
-      // Incrementa contador ANTES de tentar renovar
       retryCountMap.set(requestKey, retryCount + 1);
 
       try {
@@ -134,61 +142,60 @@ api.interceptors.response.use(
         const hasCpf = hasCpfInQuery(requestUrl);
         
         if (isBackoffice || hasCpf) {
-          // Usar Firebase Backoffice para rotas de backoffice ou IRPF com CPF
           await authBackoffice.authStateReady();
           const user = authBackoffice.currentUser;
-          
+
           if (!user) {
             retryCountMap.delete(requestKey);
-            return Promise.reject(error);
+            handle401Redirect(requestUrl);
+            throw error;
           }
 
           try {
             const newToken = await user.getIdToken(true);
 
-            // Atualiza o header com o novo token
             if (error.config.headers) {
               error.config.headers.Authorization = `Bearer ${newToken}`;
             }
 
-            // Faz nova requisição (NÃO remove o contador aqui - só remove em caso de sucesso)
             return api.request(error.config);
           } catch (tokenError) {
             retryCountMap.delete(requestKey);
-            return Promise.reject(error);
+            handle401Redirect(requestUrl);
+            throw error;
           }
         } else {
-          // Usar Firebase normal para rotas de cliente
           await auth.authStateReady();
           const user = auth.currentUser;
-          
+
           if (!user) {
             retryCountMap.delete(requestKey);
-            return Promise.reject(error);
+            handle401Redirect(requestUrl);
+            throw error;
           }
 
           try {
             const newToken = await user.getIdToken(true);
 
-            // Atualiza o header com o novo token
             if (error.config.headers) {
               error.config.headers.Authorization = `Bearer ${newToken}`;
             }
 
-            // Faz nova requisição (NÃO remove o contador aqui - só remove em caso de sucesso)
             return api.request(error.config);
           } catch (tokenError) {
             retryCountMap.delete(requestKey);
-            return Promise.reject(error);
+            handle401Redirect(requestUrl);
+            throw error;
           }
         }
       } catch (retryError) {
         retryCountMap.delete(requestKey);
-        return Promise.reject(error);
+        handle401Redirect(error.config?.url);
+        throw error;
       }
     }
 
-    return Promise.reject(error);
+    throw error;
   }
 );
 

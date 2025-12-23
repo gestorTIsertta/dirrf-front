@@ -7,11 +7,13 @@ import {
 } from '@mui/material';
 import { useRouter, useParams } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
-import { getClient, updateClient, type ClientStatus } from 'src/api/requests/backoffice-clients';
+import { getClient } from 'src/api/requests/backoffice-clients';
+import { updateDeclarationStatus } from 'src/api/requests/declarations';
 import { enqueueSnackbar } from 'notistack';
 import { useContadorContext } from 'src/hooks/use-contador-context';
 import { PageHeader, InfoCard, InfoField, InstructionCard, StatusSelect } from 'src/components/contador';
 import { COLORS } from 'src/constants/declaracao';
+import type { DeclarationStatus } from 'src/types/backoffice';
 
 const COLORS_LOCAL = {
   primary: '#2563EB',
@@ -26,11 +28,11 @@ export default function ClienteDetalhesView() {
   const [clienteNome, setClienteNome] = useState('');
   const [clienteCpf, setClienteCpf] = useState('');
   const [clienteCpfSemFormatacao, setClienteCpfSemFormatacao] = useState('');
-  const [clienteStatus, setClienteStatus] = useState<ClientStatus | undefined>(undefined);
+  const [clienteStatus, setClienteStatus] = useState<DeclarationStatus | undefined>(undefined);
+  const [selectedYear] = useState(2024);
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  // Buscar dados do cliente via API usando clientId (CPF sem formatação)
   useEffect(() => {
     if (!clientId) {
       enqueueSnackbar('ID do cliente não encontrado', { variant: 'error' });
@@ -45,12 +47,10 @@ export default function ClienteDetalhesView() {
         setClienteNome(client.name);
         setClienteCpf(client.documentFormatted || client.document);
         setClienteCpfSemFormatacao(client.document);
-        setClienteStatus(client.status);
+        setClienteStatus(client.declaracao?.status || 'pendente');
         
         setSelectedClientCpf(client.document);
       } catch (error: unknown) {
-        
-        // Verificar se é erro de autenticação
         const axiosError = error as { response?: { status?: number; data?: { message?: string } }; message?: string };
         if (axiosError?.response?.status === 401) {
           enqueueSnackbar('Erro de autenticação. Por favor, faça login novamente.', { variant: 'error' });
@@ -82,7 +82,7 @@ export default function ClienteDetalhesView() {
     router.push(`${paths.declaracao}?cpf=${clienteCpfSemFormatacao}`);
   };
 
-  const handleStatusChange = async (newStatus: ClientStatus) => {
+  const handleStatusChange = async (newStatus: DeclarationStatus) => {
     if (!clientId) {
       enqueueSnackbar('ID do cliente não encontrado', { variant: 'error' });
       return;
@@ -90,8 +90,8 @@ export default function ClienteDetalhesView() {
 
     try {
       setUpdatingStatus(true);
-      await updateClient(clientId, { status: newStatus });
-      setClienteStatus(newStatus);
+      const response = await updateDeclarationStatus(selectedYear, newStatus, clientId);
+      setClienteStatus(response.declaration.status);
       enqueueSnackbar('Status atualizado com sucesso', { variant: 'success' });
     } catch (error: unknown) {
       const axiosError = error as { response?: { status?: number; data?: { message?: string } }; message?: string };
