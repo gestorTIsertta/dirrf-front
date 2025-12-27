@@ -56,7 +56,7 @@ export function ModalComentario({
       }
       setComentario('');
     } catch (error) {
-      // ignore
+      // Error submitting comment - ignore
     } finally {
       setLocalLoading(false);
     }
@@ -90,7 +90,7 @@ export function ModalComentario({
       try {
         await onDelete(id);
       } catch (error) {
-        // ignore
+        // Error deleting comment - ignore
       }
     }
   };

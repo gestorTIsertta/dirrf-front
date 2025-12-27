@@ -21,9 +21,6 @@ export interface UpdateDeclarationStatusResponse {
   declaration: Declaration;
 }
 
-/**
- * Atualiza o status de uma declaração IR
- */
 export async function updateDeclarationStatus(
   year: number,
   status: DeclarationStatus,

@@ -58,7 +58,7 @@ export function ModalStatus({
       await onSubmit(status);
       handleClose();
     } catch (error) {
-      // ignore
+      // Error updating status - ignore
     } finally {
       setLocalLoading(false);
     }

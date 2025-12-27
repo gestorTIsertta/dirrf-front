@@ -1,5 +1,6 @@
 import { TextField, TextFieldProps } from '@mui/material';
 import { useState, useEffect, useRef } from 'react';
+import { parseCurrencyValue } from 'src/utils/format';
 
 interface CurrencyInputFieldProps extends Omit<TextFieldProps, 'value' | 'onChange'> {
   value: string;
@@ -11,30 +12,27 @@ export function CurrencyInputField({ value, onChange, ...textFieldProps }: Curre
   const [displayValue, setDisplayValue] = useState('');
   const isInternalChange = useRef(false);
 
-  const parseValue = (val: string): number => {
-    if (!val || val.trim() === '') return 0;
-    const cleaned = val.replace(/R\$\s?/g, '').replace(/\./g, '').replace(/,/g, '.').trim();
-    const num = parseFloat(cleaned);
-    return isNaN(num) ? 0 : num;
-  };
-
   const formatValue = (num: number): string => {
     if (num === 0) return '';
+    const normalized = Math.round(num * 100) / 100;
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
-    }).format(num);
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(normalized);
   };
 
   const toRawValue = (num: number): string => {
     if (num === 0) return '';
-    return num.toFixed(2).replace('.', ',');
+    const normalized = Math.round(num * 100) / 100;
+    return normalized.toFixed(2).replace('.', ',');
   };
 
   useEffect(() => {
     if (!isInternalChange.current) {
       if (value) {
-        const num = parseValue(value);
+        const num = parseCurrencyValue(value);
         setDisplayValue(num > 0 ? toRawValue(num) : '');
       } else {
         setDisplayValue('');
@@ -68,9 +66,10 @@ export function CurrencyInputField({ value, onChange, ...textFieldProps }: Curre
 
   const handleBlur = () => {
     if (displayValue) {
-      const num = parseValue(displayValue.replace(',', '.'));
+      const num = parseCurrencyValue(displayValue);
       if (num > 0) {
-        const formatted = formatValue(num);
+        const normalized = Math.round(num * 100) / 100;
+        const formatted = formatValue(normalized);
         setDisplayValue(formatted);
         isInternalChange.current = true;
         onChange(formatted);

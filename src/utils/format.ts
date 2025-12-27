@@ -52,23 +52,46 @@ export function unformatCPFCNPJ(value: string): string {
   return value.replace(/\D/g, '');
 }
 
-export function formatCurrency(value: string | number): string {
-  if (value === null || value === undefined || value === '') return 'R$ 0,00';
+export function parseCurrencyValue(value: string | number | null | undefined): number {
+  if (value === null || value === undefined || value === '') return 0;
   
-  let numValue: number;
-  
-  if (typeof value === 'string') {
-    const cleaned = value.replace(/R\$\s?/g, '').replace(/\./g, '').replace(/,/g, '.').trim();
-    numValue = parseFloat(cleaned);
-  } else {
-    numValue = value;
+  if (typeof value === 'number') {
+    return Math.round(value * 100) / 100;
   }
   
-  if (isNaN(numValue)) return 'R$ 0,00';
+  let cleaned = value.replace(/R\$\s?/g, '').trim();
+  
+  if (!cleaned.includes(',') && !cleaned.includes('.')) {
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? 0 : Math.round(num * 100) / 100;
+  }
+  
+  if (cleaned.includes(',')) {
+    cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+  } else if (cleaned.includes('.')) {
+    const parts = cleaned.split('.');
+    if (!(parts.length === 2 && /^\d{2}$/.test(parts[1]))) {
+      cleaned = cleaned.replace(/\./g, '');
+    }
+  }
+  
+  const numValue = parseFloat(cleaned);
+  
+  if (isNaN(numValue)) return 0;
+  
+  return Math.round(numValue * 100) / 100;
+}
+
+export function formatCurrency(value: string | number | null | undefined): string {
+  if (value === null || value === undefined || value === '') return 'R$ 0,00';
+  
+  const numValue = parseCurrencyValue(value);
   
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(numValue);
 }
 

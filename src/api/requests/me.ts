@@ -117,17 +117,11 @@ export interface IRPFDeclaration {
   processedAt?: string;
 }
 
-/**
- * Retorna os dados do cliente autenticado
- */
 export async function getMeProfile(): Promise<MeProfile> {
   const response = await api.get<MeProfile>('/me');
   return response.data;
 }
 
-/**
- * Lista as invoices do cliente autenticado
- */
 export async function getMeInvoices(params?: {
   page?: number;
   limit?: number;
@@ -137,9 +131,6 @@ export async function getMeInvoices(params?: {
   return response.data;
 }
 
-/**
- * Retorna a declaração de IRPF mais recente do cliente autenticado
- */
 export async function getMeIRPF(): Promise<IRPFDeclaration> {
   const response = await api.get<IRPFDeclaration>('/me/irpf-upload');
   return response.data;

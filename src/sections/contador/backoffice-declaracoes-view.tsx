@@ -122,7 +122,6 @@ export default function BackofficeDeclaracoesView() {
   const [comentariosMap, setComentariosMap] = useState<Record<string, Comentario[]>>({});
   const [loadingComentarios, setLoadingComentarios] = useState<Record<string, boolean>>({});
 
-  // Carregar comentários da API quando necessário (chamado quando o modal abre)
   const loadComentarios = useCallback(async (declaracao: DeclaracaoResumo): Promise<void> => {
     const clientCpf = declaracao.cpf.replace(/\D/g, '');
     if (!clientCpf || clientCpf.length < 11) {
@@ -134,8 +133,6 @@ export default function BackofficeDeclaracoesView() {
     try {
       const year = parseInt(selectedYear);
       const notes = await listNotes(year, clientCpf);
-      
-      // Converter notas da API para o formato de Comentario
       const comentarios: Comentario[] = notes.map((note) => ({
         id: note.id,
         texto: note.anotacoes,
@@ -168,8 +165,6 @@ export default function BackofficeDeclaracoesView() {
 
       const year = parseInt(selectedYear);
       await createNote(year, { anotacoes: comentario }, clientCpf);
-      
-      // Recarregar comentários do backend após criar
       await loadComentarios(declaracao);
       
       enqueueSnackbar('Comentário adicionado com sucesso', { variant: 'success' });
@@ -190,8 +185,6 @@ export default function BackofficeDeclaracoesView() {
 
       const year = parseInt(selectedYear);
       await updateNote(year, comentarioId, { anotacoes: comentario }, clientCpf);
-      
-      // Recarregar comentários do backend após editar
       await loadComentarios(declaracao);
       
       enqueueSnackbar('Comentário editado com sucesso', { variant: 'success' });
@@ -212,8 +205,6 @@ export default function BackofficeDeclaracoesView() {
 
       const year = parseInt(selectedYear);
       await deleteNote(year, comentarioId, clientCpf);
-      
-      // Recarregar comentários do backend após deletar
       await loadComentarios(declaracao);
       
       enqueueSnackbar('Comentário excluído com sucesso', { variant: 'success' });
@@ -241,10 +232,7 @@ export default function BackofficeDeclaracoesView() {
       }
 
       const year = parseInt(selectedYear);
-      // Usar a API de declarações para atualizar o status
       const response = await updateDeclarationStatus(year, status, clientCpf);
-      
-      // Atualizar o mapa de clientes com o status da declaração atualizado
       setClientsMap((prev) => {
         const client = prev[clientCpf];
         if (client) {
@@ -264,21 +252,18 @@ export default function BackofficeDeclaracoesView() {
         return prev;
       });
 
-      // Recarregar a lista do backend para garantir dados atualizados
       const refreshResponse = await listClientsByResponsible({
         page: 1,
         limit: 100,
         anoExercicio: parseInt(selectedYear),
       });
 
-      // Atualizar o mapa de clientes
       const refreshedClientsMap: Record<string, Client> = {};
       refreshResponse.clients.forEach(client => {
         refreshedClientsMap[client.id] = client;
       });
       setClientsMap(refreshedClientsMap);
 
-      // Atualizar a lista de declarações com dados do backend
       const refreshedDeclaracoesData: DeclaracaoResumo[] = refreshResponse.clients
         .filter(client => client.type === 'PF')
         .map((client) => {
@@ -301,7 +286,6 @@ export default function BackofficeDeclaracoesView() {
 
       setDeclaracoes(refreshedDeclaracoesData);
 
-      // Atualizar cards de resumo
       const refreshedTotal = refreshedDeclaracoesData.length;
       const refreshedPendente = refreshedDeclaracoesData.filter(d => d.status === 'pendente').length;
       const refreshedEmAnalise = refreshedDeclaracoesData.filter(d => d.status === 'em_analise').length;
@@ -372,13 +356,9 @@ export default function BackofficeDeclaracoesView() {
   const getClienteStatus = (declaracao: DeclaracaoResumo): DeclarationStatus | undefined => {
     const clientCpf = declaracao.cpf.replace(/\D/g, '');
     const client = clientsMap[clientCpf];
-    
-    // Retornar status da declaração se disponível
     if (client?.declaracao?.status) {
       return client.declaracao.status;
     }
-    
-    // Fallback: usar status da declaração na lista
     return declaracao.status;
   };
 
@@ -389,21 +369,17 @@ export default function BackofficeDeclaracoesView() {
   };
 
   useEffect(() => {
-    let isMounted = true; // Flag para evitar atualizações se o componente foi desmontado
-    
+    let isMounted = true;
     const fetchClients = async () => {
       try {
         setLoading(true);
         const response = await listClientsByResponsible({
           page: 1,
-          limit: 100, // Buscar muitos clientes para o dashboard
+          limit: 100,
           anoExercicio: parseInt(selectedYear),
         });
 
-        // Só atualiza o estado se o componente ainda estiver montado
         if (!isMounted) return;
-
-        // Armazenar clientes em um mapa para acesso rápido
         const clientsMapData: Record<string, Client> = {};
         response.clients.forEach(client => {
           clientsMapData[client.id] = client;
@@ -411,9 +387,8 @@ export default function BackofficeDeclaracoesView() {
         setClientsMap(clientsMapData);
 
         const declaracoesData: DeclaracaoResumo[] = response.clients
-          .filter(client => client.type === 'PF') // Apenas pessoas físicas por enquanto
+          .filter(client => client.type === 'PF')
           .map((client) => {
-            // Usar status da declaração diretamente do backend
             const status: DeclarationStatus = client.declaracao?.status || 'pendente';
             
           
@@ -494,8 +469,6 @@ export default function BackofficeDeclaracoesView() {
           },
         ]);
       } catch (error: unknown) {
-        
-        // Verificar se é erro de autenticação
         const axiosError = error as { response?: { status?: number; data?: { message?: string } }; message?: string };
         if (axiosError?.response?.status === 401) {
           enqueueSnackbar('Erro de autenticação. Por favor, faça login novamente.', { variant: 'error' });
@@ -520,8 +493,7 @@ export default function BackofficeDeclaracoesView() {
     return () => {
       isMounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedYear]); // router é estável e não precisa estar nas dependências
+  }, [selectedYear, router]);
 
   if (loading) {
     return (

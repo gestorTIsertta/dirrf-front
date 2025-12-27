@@ -47,9 +47,6 @@ export interface ListIRPFDeclarationsResponse {
   declarations: IRPFDeclaration[];
 }
 
-/**
- * Lista invoices de um cliente (requer autenticação de backoffice)
- */
 export async function listInvoices(
   clientId: string,
   params?: ListInvoicesParams
@@ -58,17 +55,11 @@ export async function listInvoices(
   return response.data;
 }
 
-/**
- * Busca detalhes de uma invoice específica (requer autenticação de backoffice)
- */
 export async function getInvoiceDetails(clientId: string, invoiceId: string): Promise<GetInvoiceDetailsResponse> {
   const response = await api.get<GetInvoiceDetailsResponse>(`/irpf-uploads/clients/${clientId}/${invoiceId}`);
   return response.data;
 }
 
-/**
- * Lista declarações de IRPF de um cliente por CPF (requer autenticação de backoffice)
- */
 export async function listIRPFDeclarations(cpf: string): Promise<IRPFDeclaration[]> {
   const response = await api.get<ListIRPFDeclarationsResponse>(`/irpf-uploads/clients/${cpf}`);
   return response.data.declarations;
@@ -92,9 +83,6 @@ export interface UploadInvoiceResponse {
   };
 }
 
-/**
- * Faz upload de uma invoice (arquivo PDF) - Requer autenticação de backoffice
- */
 export async function uploadInvoice(file: File): Promise<UploadInvoiceResponse> {
   const formData = new FormData();
   formData.append('file', file);

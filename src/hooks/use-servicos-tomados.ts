@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ServicoTomado, FormDataServicoTomado } from 'src/types/declaracao';
 import { convertValueFromBackend } from 'src/api/utils/converters';
+import { parseCurrencyValue } from 'src/utils/format';
 import * as servicesTakenApi from 'src/api/requests/services-taken';
 import { useClientCpf } from 'src/hooks/use-contador-context';
 
@@ -69,8 +70,6 @@ export function useServicosTomados({ year, initialServicosTomados, onServicosTom
   }, [year, clientCpf]);
 
   useEffect(() => {
-    // Só carrega serviços tomados se não estiver na rota de declaração com query string
-    // ou se o CPF já estiver disponível (para evitar chamada dupla)
     if (location.pathname === '/declaracao') {
       const searchParams = new URLSearchParams(location.search);
       const cpfFromQuery = searchParams.get('cpf');
@@ -99,9 +98,9 @@ export function useServicosTomados({ year, initialServicosTomados, onServicosTom
       setLoading(true);
       setError(null);
       
-      const valorTotal = parseFloat(servicoTomado.valorTotal.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+      const valorTotal = parseCurrencyValue(servicoTomado.valorTotal);
       const valorReembolsado = servicoTomado.valorReembolsado
-        ? parseFloat(servicoTomado.valorReembolsado.replace(/[^\d,]/g, '').replace(',', '.')) || 0
+        ? parseCurrencyValue(servicoTomado.valorReembolsado)
         : undefined;
 
       const response = await servicesTakenApi.createServiceTaken(year, {
@@ -140,9 +139,9 @@ export function useServicosTomados({ year, initialServicosTomados, onServicosTom
       setLoading(true);
       setError(null);
       
-      const valorTotal = parseFloat(servicoTomadoAtualizado.valorTotal.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+      const valorTotal = parseCurrencyValue(servicoTomadoAtualizado.valorTotal);
       const valorReembolsado = servicoTomadoAtualizado.valorReembolsado
-        ? parseFloat(servicoTomadoAtualizado.valorReembolsado.replace(/[^\d,]/g, '').replace(',', '.')) || 0
+        ? parseCurrencyValue(servicoTomadoAtualizado.valorReembolsado)
         : undefined;
 
       await servicesTakenApi.updateServiceTaken(year, id, {

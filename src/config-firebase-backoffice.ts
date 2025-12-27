@@ -26,7 +26,6 @@ function getBackofficeApp() {
     return initializeApp(firebaseConfigBackoffice, BACKOFFICE_APP_NAME);
   } catch (error) {
     console.error('Erro ao inicializar Firebase Backoffice:', error);
-    // Se falhar, tenta inicializar normalmente
     return initializeApp(firebaseConfigBackoffice, BACKOFFICE_APP_NAME);
   }
 }

@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { FormDataServicoTomado, ServicoTomado } from 'src/types/declaracao';
 import { COLORS } from 'src/constants/declaracao';
-import { formatCPFCNPJ, unformatCPFCNPJ } from 'src/utils/format';
+import { formatCPFCNPJ, unformatCPFCNPJ, parseCurrencyValue, formatCurrency } from 'src/utils/format';
 import { CurrencyInputField } from './currency-input';
 
 interface ModalServicoTomadoProps {
@@ -94,9 +94,9 @@ export function ModalServicoTomado({
   };
 
 
-  const valorTotalNum = parseFloat(formData.valorTotal.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
-  const valorReembolsadoNum = parseFloat((formData.valorReembolsado || '0').replace(/[^\d,]/g, '').replace(',', '.')) || 0;
-  const valorDedutivel = valorTotalNum - valorReembolsadoNum;
+  const valorTotalNum = parseCurrencyValue(formData.valorTotal);
+  const valorReembolsadoNum = parseCurrencyValue(formData.valorReembolsado || '0');
+  const valorDedutivel = Math.round((valorTotalNum - valorReembolsadoNum) * 100) / 100;
 
   return (
     <Dialog
@@ -197,7 +197,7 @@ export function ModalServicoTomado({
                 Valor Dedutível
               </Typography>
               <Typography variant="h6" fontWeight={700} color={COLORS.primary}>
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorDedutivel)}
+                {formatCurrency(valorDedutivel)}
               </Typography>
             </Box>
           )}

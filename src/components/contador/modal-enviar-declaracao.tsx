@@ -50,7 +50,7 @@ export function ModalEnviarDeclaracao({
       }
       onClose();
     } catch (error) {
-      // ignore
+      // Error submitting declaration - ignore
     } finally {
       setLocalLoading(false);
     }

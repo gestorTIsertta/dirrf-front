@@ -11,10 +11,6 @@ export const RouterLink = forwardRef<HTMLAnchorElement, LinkProps>(
 
 RouterLink.displayName = 'RouterLink';
 
-/**
- * Componente de proteção de rota para clientes (Firebase normal)
- * Verifica se há token válido antes de permitir acesso
- */
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,7 +25,6 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
       if (user) {
         try {
-          // Verifica se o token existe e é válido (força verificação)
           const token = await user.getIdToken(false);
           if (token && isMounted) {
             loadingState = false;
@@ -41,7 +36,6 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
             setIsLoading(false);
           }
         } catch (error) {
-          // Token inválido ou expirado
           if (isMounted) {
             loadingState = false;
             setIsAuthenticated(false);
@@ -49,7 +43,6 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
           }
         }
       } else {
-        // Não há usuário autenticado
         if (isMounted) {
           loadingState = false;
           setIsAuthenticated(false);
@@ -58,11 +51,8 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
       }
     };
 
-    // Garante que o Firebase Auth está pronto antes de verificar
     auth.authStateReady().then(() => {
       if (!isMounted) return;
-      
-      // Verifica o usuário atual imediatamente
       const currentUser = auth.currentUser;
       checkAuth(currentUser);
     }).catch(() => {
@@ -73,16 +63,12 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
       }
     });
 
-    // onAuthStateChanged é chamado imediatamente quando registrado
-    // e também sempre que o estado de autenticação muda
     unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (isMounted) {
         await checkAuth(user);
       }
     });
 
-    // Timeout de segurança: se após 2 segundos ainda estiver carregando,
-    // considera como não autenticado
     const timeoutId = setTimeout(() => {
       if (isMounted && loadingState) {
         setIsAuthenticated(false);
@@ -100,7 +86,6 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   }, []);
 
   if (isLoading) {
-    // Pode mostrar um loading aqui se quiser
     return null;
   }
 
@@ -111,10 +96,6 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/**
- * Componente de proteção de rota para contadores (Firebase Backoffice)
- * Verifica se há token válido antes de permitir acesso
- */
 export function ProtectedRouteBackoffice({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -129,7 +110,6 @@ export function ProtectedRouteBackoffice({ children }: { children: ReactNode }) 
 
       if (user) {
         try {
-          // Verifica se o token existe e é válido (força verificação)
           const token = await user.getIdToken(false);
           if (token && isMounted) {
             loadingState = false;
@@ -141,7 +121,6 @@ export function ProtectedRouteBackoffice({ children }: { children: ReactNode }) 
             setIsLoading(false);
           }
         } catch (error) {
-          // Token inválido ou expirado
           if (isMounted) {
             loadingState = false;
             setIsAuthenticated(false);
@@ -149,7 +128,6 @@ export function ProtectedRouteBackoffice({ children }: { children: ReactNode }) 
           }
         }
       } else {
-        // Não há usuário autenticado
         if (isMounted) {
           loadingState = false;
           setIsAuthenticated(false);
@@ -158,11 +136,8 @@ export function ProtectedRouteBackoffice({ children }: { children: ReactNode }) 
       }
     };
 
-    // Garante que o Firebase Auth está pronto antes de verificar
     authBackoffice.authStateReady().then(() => {
       if (!isMounted) return;
-      
-      // Verifica o usuário atual imediatamente
       const currentUser = authBackoffice.currentUser;
       checkAuth(currentUser);
     }).catch(() => {
@@ -173,16 +148,12 @@ export function ProtectedRouteBackoffice({ children }: { children: ReactNode }) 
       }
     });
 
-    // onAuthStateChanged é chamado imediatamente quando registrado
-    // e também sempre que o estado de autenticação muda
     unsubscribe = onAuthStateChanged(authBackoffice, async (user) => {
       if (isMounted) {
         await checkAuth(user);
       }
     });
 
-    // Timeout de segurança: se após 2 segundos ainda estiver carregando,
-    // considera como não autenticado
     const timeoutId = setTimeout(() => {
       if (isMounted && loadingState) {
         setIsAuthenticated(false);
@@ -200,7 +171,6 @@ export function ProtectedRouteBackoffice({ children }: { children: ReactNode }) 
   }, []);
 
   if (isLoading) {
-    // Pode mostrar um loading aqui se quiser
     return null;
   }
 

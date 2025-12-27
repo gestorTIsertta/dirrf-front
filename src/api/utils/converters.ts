@@ -1,3 +1,5 @@
+import { parseCurrencyValue } from 'src/utils/format';
+
 export function convertTipoContaToBackend(
   tipo: 'Corrente' | 'Poupança'
 ): 'corrente' | 'poupanca' | 'salario' | 'investimento' | 'outro' {
@@ -39,7 +41,8 @@ export function convertDateToBackend(date: string): string {
     return dateObj.toISOString();
   }
 
-  if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+  const dateMatch = /^\d{4}-\d{2}-\d{2}$/.exec(date);
+  if (dateMatch) {
     const dateObj = new Date(date);
     return dateObj.toISOString();
   }
@@ -66,18 +69,19 @@ export function convertDateFromBackend(date: string): string {
 
 export function convertValueToBackend(value: string): number {
   if (!value) return 0;
-
-  const cleaned = value.replace(/R\$\s?/g, '').replace(/\./g, '').replace(/,/g, '.').trim();
-
-  const numValue = parseFloat(cleaned);
-  return isNaN(numValue) ? 0 : numValue;
+  return parseCurrencyValue(value);
 }
 
 export function convertValueFromBackend(value: number): string {
+  if (value === null || value === undefined || isNaN(value)) return 'R$ 0,00';
+  const normalizedValue = Math.round(value * 100) / 100;
+  
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-  }).format(value);
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(normalizedValue);
 }
 
 export function convertCategoriaToBackend(

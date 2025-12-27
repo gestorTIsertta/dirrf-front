@@ -45,9 +45,6 @@ export interface CheckEmailExistsResponse {
   message: string;
 }
 
-/**
- * Autentica com email e senha
- */
 export async function authenticateWithPassword(
   data: AuthenticateWithPasswordRequest
 ): Promise<AuthenticateWithPasswordResponse> {
@@ -55,9 +52,6 @@ export async function authenticateWithPassword(
   return response.data;
 }
 
-/**
- * Autentica com número de telefone
- */
 export async function authenticateWithPhone(
   data: AuthenticateWithPhoneRequest
 ): Promise<AuthenticateWithPhoneResponse> {
@@ -65,9 +59,6 @@ export async function authenticateWithPhone(
   return response.data;
 }
 
-/**
- * Renova o token de autenticação
- */
 export async function refreshToken(
   data: RefreshTokenRequest
 ): Promise<RefreshTokenResponse> {
@@ -75,9 +66,6 @@ export async function refreshToken(
   return response.data;
 }
 
-/**
- * Verifica se um email existe no Firebase Authentication
- */
 export async function checkEmailExists(
   params: CheckEmailExistsParams
 ): Promise<CheckEmailExistsResponse> {

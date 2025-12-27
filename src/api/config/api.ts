@@ -55,7 +55,7 @@ api.interceptors.request.use(
               config.headers.Authorization = `Bearer ${token}`;
             }
           } catch (tokenError) {
-            // ignore
+            // Error getting token - ignore
           }
         }
       } else if (hasCpf) {
@@ -90,7 +90,7 @@ api.interceptors.request.use(
         }
       }
     } catch (error: unknown) {
-      // ignore
+      // Error in auth interceptor - ignore
     }
 
     if (config.headers && !(config.data instanceof FormData)) {

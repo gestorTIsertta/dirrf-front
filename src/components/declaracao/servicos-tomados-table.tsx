@@ -10,7 +10,7 @@ import { useServicosTomados } from 'src/hooks/use-servicos-tomados';
 import { useDeleteModal } from 'src/hooks/use-delete-modal';
 import { usePagination, paginateItems } from 'src/utils/pagination';
 import { handleError } from 'src/utils/error-handler';
-import { formatCPFCNPJ, formatCurrency } from 'src/utils/format';
+import { formatCPFCNPJ, formatCurrency, parseCurrencyValue } from 'src/utils/format';
 import { Loading } from 'src/components/loading/loading';
 
 interface ServicosTomadosTableProps {
@@ -166,9 +166,9 @@ export function ServicosTomadosTable({ year, servicosTomados: servicosTomadosPro
                 </TableRow>
               ) : (
                 paginatedServicos.map((servico) => {
-                  const valorTotal = parseFloat(servico.valorTotal.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
-                  const valorReembolsado = parseFloat((servico.valorReembolsado || '0').replace(/[^\d,]/g, '').replace(',', '.')) || 0;
-                  const valorDedutivel = valorTotal - valorReembolsado;
+                  const valorTotal = parseCurrencyValue(servico.valorTotal);
+                  const valorReembolsado = parseCurrencyValue(servico.valorReembolsado || '0');
+                  const valorDedutivel = Math.round((valorTotal - valorReembolsado) * 100) / 100;
 
                   return (
                     <TableRow key={servico.id} hover>
@@ -189,7 +189,7 @@ export function ServicosTomadosTable({ year, servicosTomados: servicosTomadosPro
                       </TableCell>
                       <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, py: { xs: 1, sm: 1.5 } }}>
                         <Typography fontWeight={600} color={COLORS.primary}>
-                          {formatCurrency(valorDedutivel.toString())}
+                          {formatCurrency(valorDedutivel)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right" sx={{ py: { xs: 1, sm: 1.5 } }}>

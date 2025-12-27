@@ -24,7 +24,6 @@ function getFirebaseApp() {
     return initializeApp(firebaseConfig);
   } catch (error) {
     console.error('Erro ao inicializar Firebase:', error);
-    // Se falhar, tenta inicializar normalmente
     return initializeApp(firebaseConfig);
   }
 }
